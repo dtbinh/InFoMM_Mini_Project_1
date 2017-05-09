@@ -34,11 +34,11 @@ Y2 = @(t) cos(t);
 target_pos_vec = [Y1(0),Y2(0)];
 
 % Random pos. initialisation AROUND the target
-drone_pos_array = repmat(target_pos_vec,4,1) + randn(4,2);
+% drone_pos_array = repmat(target_pos_vec,4,1) + randn(4,2);
 
 % Fixed pos. initialisation.
-% drone_pos_array = [-3 -1 1 3; 
-%                   -2 -2 -2 -2]'; 
+drone_pos_array = [-3 -1 1 3; 
+                  -2 -2 -2 -2]'; 
 
 % Stationary initialisation.
 drone_vel_array = zeros(4,2);  
@@ -92,7 +92,7 @@ all_time = linspace(S,L,T);
 target_trajectory = [Y1(all_time);Y2(all_time)]';
 
 % Control parameters.
-alpha = 10;
+alpha = 1.6;
 beta = 0.5;
 v_sum = sum(v_unit_orientation_array,1);
 
