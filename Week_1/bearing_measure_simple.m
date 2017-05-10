@@ -39,8 +39,8 @@ all_time = linspace(0,T,timesteps);
 bearing_plot = figure();
 g1 = animatedline('Color','r','MaximumNumPoints',1,'Marker','x');
 g2 = animatedline('Color','b','MaximumNumPoints',1,'Marker','o');
-g3 = animatedline('Color','r','MaximumNumPoints',100);
-g4 = animatedline('Color','b','MaximumNumPoints',100);
+g3 = animatedline('Color','r','MaximumNumPoints',200);
+g4 = animatedline('Color','b','MaximumNumPoints',200);
 legend('Drone 1','Drone 2')
 axis([-1,7,-2,4]);
 shg;
@@ -53,5 +53,8 @@ for i = 1:length(all_time)
     addpoints(g2,Q(1),Q(2));
     addpoints(g3,P(1),P(2));
     addpoints(g4,Q(1),Q(2));
+    hold on
+    ang_line = plot([P(1),Q(1)],[P(2),Q(2)],'k--');
     drawnow;
+    delete(ang_line);
 end
