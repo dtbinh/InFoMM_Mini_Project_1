@@ -15,7 +15,7 @@ function [] = angular_tracking_with_four_drones()
 % OUTPUT:
 %     : {}
 
-%% Examples
+%% Example
 % [] = angular_tracking_with_four_drones()
 
 %%
@@ -24,68 +24,77 @@ clear all; close all; clc; format compact;
 % Functional initialisation of the target's movement.
 Y1 = @(t) sin(t);
 Y2 = @(t) cos(t);
-target_pos_vec = [Y1(0),Y2(0)];
+T_pos_vec = [Y1(0),Y2(0)];
 
-% Random pos. initialisation AROUND the target
-drone_pos_array = repmat(target_pos_vec,4,1) + randn(4,2);
+% Random pos. initialisation AROUND the target. Note that we use the
+% initials 'D' and 'T' for 'Drone' and 'Target' respectively.
+D_pos_array = repmat(T_pos_vec,4,1) + randn(4,2);
 
-% Stationary initialisation.
-drone_vel_array = zeros(4,2);  
+% Stationary initialisation, i.e., all velocities are zero.
+D_vel_array = zeros(4,2);  
 
-% If wanted, plot the initial positions of all individuals, to check that
+% Compute all unit vectors {r,v,y} defined in the original formulation.
+[r_unit_array] = direction_finder(D_pos_array);
+[v_unit_array] = orientation_finder(D_vel_array);
+[y_unit__array] = target_finder(D_pos_array,...
+                                          T_pos_vec);
+
+% If needed, plot the initial positions of all individuals, to check that
 % there is no initial problem, i.e., no initial overlapping of drones.
 if 1
     figure();
     hold on;
-    scatter(drone_pos_array(:,1),drone_pos_array(:,2), 100, 'g');
-    quiver(drone_pos_array(:,1),drone_pos_array(:,2),...
-           drone_vel_array(:,1),drone_vel_array(:,2), 'k')
-    scatter(target_pos_vec(1), target_pos_vec(2), 100, 'rx');
+    
+    % Plot the locations of the drones and the target.
+    scatter(D_pos_array(:,1),D_pos_array(:,2), 100, 'g');
+    quiver(D_pos_array(:,1),D_pos_array(:,2),...
+           D_vel_array(:,1),D_vel_array(:,2), 'k')
+    scatter(T_pos_vec(1), T_pos_vec(2), 100, 'rx');
+    
+    % Plot the direction vectors from drones to all other objects.
+    for i = 1:4
+        quiver(repmat(D_pos_array(i,1),4,1),repmat(D_pos_array(i,2),4,1),...
+                   -.3*r_unit_array(:,2*i-1),-.3*r_unit_array(:,2*i), 'k');
+        quiver(D_pos_array(i,1),D_pos_array(i,2),...
+                          .3*y_unit__array(i,1),.3*y_unit__array(i,2),'r');
+    end
+    
+    axis equal;
     shg;
 end
-
-% Compute all unit vectors.
-[r_unit_direction_array] = direction_finder(drone_pos_array);
-[v_unit_orientation_array] = orientation_finder(drone_vel_array);
-[y_unit_target_dir_array] = target_finder(drone_pos_array,...
-                                          target_pos_vec);
-
-for i = 1:4
-    quiver(repmat(drone_pos_array(i,1),4,1),repmat(drone_pos_array(i,2),4,1),...
-    -.3*r_unit_direction_array(:,2*i-1),-.3*r_unit_direction_array(:,2*i), 'k');
-    quiver(drone_pos_array(i,1),drone_pos_array(i,2),...
-    .3*y_unit_target_dir_array(i,1),.3*y_unit_target_dir_array(i,2),'r');
-end 
-axis equal;
-shg;
         
 %%
 % Find directions of each drone pointing to the target, and find their
 % bearings (from NORTH).
-drone_dir_array = target_pos_vec - drone_pos_array;
-drone_angles_array = atan(drone_dir_array(:,2)./drone_dir_array(:,1));
-drone_angles_array = drone_angles_array - pi/2;
-drone_degrees_array = drone_angles_array./(2*pi) * 360;
+D_dir_array = T_pos_vec - D_pos_array;
+D_ang_array = atan(D_dir_array(:,2)./D_dir_array(:,1));
+D_ang_array = D_ang_array - pi/2;
 
-for i = 1:length(drone_degrees_array)
-    if drone_degrees_array(i) < 0
-    drone_degrees_array(i) = drone_degrees_array(i) + 360;
+% Change the angles into degrees if necessary (mainly used to check).
+D_deg_array = D_ang_array./(2*pi) * 360;
+
+% Note that Matlab measures from NORTH by default, rather than from the
+% x-axis of the complex plane. Thus, we make sure that we are working with
+% positive angles to measure the true bearing.
+for i = 1:length(D_deg_array)
+    if D_deg_array(i) < 0
+    D_deg_array(i) = D_deg_array(i) + 360;
     end
 end
-for i = 1:length(drone_degrees_array)
-    d1 = drone_pos_array(i,:);
-    if d1(1) > target_pos_vec(1);
-        drone_degrees_array(i) = drone_degrees_array(i) - 180;
+for i = 1:length(D_deg_array)
+    d1 = D_pos_array(i,:);
+    if d1(1) > T_pos_vec(1);
+        D_deg_array(i) = D_deg_array(i) - 180;
     end
 end
 
 %%
 
 % Find the mean direction.
-mean_deg = mean(drone_degrees_array);
+mean_deg = mean(D_deg_array);
 
 % Remove each current direction contribution from the mean.
-mean_diff = repmat(mean_deg,4,1) - drone_degrees_array/4;
+mean_diff = repmat(mean_deg,4,1) - D_deg_array/4;
 
 S = 0;
 L = 100;
@@ -98,11 +107,11 @@ target_trajectory = [Y1(all_time);Y2(all_time)]';
 
 % Create new arrays to hold all previous trajectory points.
 drone_trajectory_array = zeros(T,8);
-drone_dir_array = zeros(T,8);
-drone_trajectory_array(1,:) = reshape(drone_pos_array',1,8);
-drone_dir_array(1,:) = reshape(drone_vel_array',1,8);
+D_dir_array = zeros(T,8);
+drone_trajectory_array(1,:) = reshape(D_pos_array',1,8);
+D_dir_array(1,:) = reshape(D_vel_array',1,8);
 drone_pos_previous = drone_trajectory_array(1,:);
-drone_vel_previous = drone_dir_array(1,:);
+drone_vel_previous = D_dir_array(1,:);
 
 % Set up the animation to view the trajectories.
 full_traj = figure();
@@ -133,30 +142,30 @@ shg;
 for t = 2:T
     
     % Reshape the arrays.
-    drone_pos_array = reshape(drone_pos_previous,2,4)';
-    target_pos_vec = [Y1(all_time(t)),Y2(all_time(t))];
-    drone_dir_array = target_pos_vec - drone_pos_array;
-    drone_angles_array = atan(drone_dir_array(:,2)./drone_dir_array(:,1));
-    drone_angles_array = drone_angles_array - pi/2;
-    drone_degrees_array = drone_angles_array./(2*pi) * 360;
+    D_pos_array = reshape(drone_pos_previous,2,4)';
+    T_pos_vec = [Y1(all_time(t)),Y2(all_time(t))];
+    D_dir_array = T_pos_vec - D_pos_array;
+    D_ang_array = atan(D_dir_array(:,2)./D_dir_array(:,1));
+    D_ang_array = D_ang_array - pi/2;
+    D_deg_array = D_ang_array./(2*pi) * 360;
     
-    for i = 1:length(drone_degrees_array)
-        if drone_degrees_array(i) < 0
-        drone_degrees_array(i) = drone_degrees_array(i) + 360;
+    for i = 1:length(D_deg_array)
+        if D_deg_array(i) < 0
+        D_deg_array(i) = D_deg_array(i) + 360;
         end
     end
-    for i = 1:length(drone_degrees_array)
-        d1 = drone_pos_array(i,:);
-        if d1(1) > target_pos_vec(1);
-            drone_degrees_array(i) = drone_degrees_array(i) - 180;
+    for i = 1:length(D_deg_array)
+        d1 = D_pos_array(i,:);
+        if d1(1) > T_pos_vec(1);
+            D_deg_array(i) = D_deg_array(i) - 180;
         end
     end
 
     % Recompute all unit vectors.
-    r_unit_direction_array = direction_finder(drone_pos_array);
-    r_angle_array = relative_bearing(r_unit_direction_array);
-    y_unit_target_dir_array = target_finder(drone_pos_array,...
-                                              target_pos_vec);
+    r_unit_array = direction_finder(D_pos_array);
+    r_angle_array = relative_bearing(r_unit_array);
+    y_unit__array = target_finder(D_pos_array,...
+                                              T_pos_vec);
 
     % Find the average direction to all other drones, to try and centralise
     % them.
@@ -169,12 +178,12 @@ for t = 2:T
     drone_pos_previous = drone_trajectory_array(t,:);  
     
     % Update the drone velocities.
-    drone_dir_array(t,:) = drone_vel_previous + ...
-        (alpha*reshape(y_unit_target_dir_array',1,8) - ...
+    D_dir_array(t,:) = drone_vel_previous + ...
+        (alpha*reshape(y_unit__array',1,8) - ...
         beta*repmat(v_sum,1,4) + ...
-        beta*reshape(v_unit_orientation_array',1,8) - ...
+        beta*reshape(v_unit_array',1,8) - ...
         drone_vel_previous)*dt;
-    drone_vel_previous = drone_dir_array(t,:);
+    drone_vel_previous = D_dir_array(t,:);
     
     % Update the drone positions.
     addpoints(g1,target_trajectory(t,1),target_trajectory(t,2));
