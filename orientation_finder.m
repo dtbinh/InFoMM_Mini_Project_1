@@ -13,15 +13,23 @@ function [A] = orientation_finder(M)
 %     A: {array} Ordered drone orientations (normed velocities).
 
 %% Examples
-% [v_unit_orientation_array] = orientation_finder(drone_vel_array)
+% [v_unit_array] = orientation_finder(D_vel_array)
 
 %%
-V = zeros(4,2);
-for m = 1:4
+
+% Initialise the holding matrix - this should work for any position vectors
+% of size N x 2.
+V = zeros(N,2);
+
+for m = 1:N
+    % Check if the drone has collapsed onto the target - if it has, this is
+    % a problem, but we will deal with this in a different code...
     v = M(m,:);
     if norm(v) ~= 0
         v = v/norm(v);
     end
     V(m,:) = v;
 end
+
+% Output the realised unit vector array.
 A = V;
