@@ -92,8 +92,8 @@ all_time = linspace(S,L,T);
 target_trajectory = [Y1(all_time);Y2(all_time)]';
 
 % Control parameters.
-alpha = 1.5;
-beta = 0.6;
+alpha = 1.6;
+beta = 0.5;
 v_sum = sum(v_unit_orientation_array,1);
 
 % Define the functional form of dV/dt = F (Eq. 21) with the argument being 
