@@ -14,7 +14,7 @@ function [] = drone_calibration(M,dt)
 % OUTPUT:
 %     : {}
 
-%% Examples
+%% Example
 % [knowledge] = drone_calibration(drone_pos_array)
 
 %%

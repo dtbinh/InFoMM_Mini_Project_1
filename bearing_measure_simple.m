@@ -13,7 +13,7 @@ function [] = bearing_measure_simple(T)
 % OUTPUT:
 %     : {}
 
-%% Examples
+%% Example
 % [] = bearing_measure_simple()
 
 %%

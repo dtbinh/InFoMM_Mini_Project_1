@@ -18,7 +18,7 @@ function [] = planar_tracking_with_four_drones(L,T,a,b)
 % OUTPUT:
 %     : {}
 
-%% Examples
+%% Example
 % planar_tracking_with_four_drones(100,5001,1.5,0.5)
 
 %%

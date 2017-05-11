@@ -14,7 +14,7 @@ function [A] = target_finder(M,P)
 % OUTPUT:
 %     A:  {array} Ordered unit directions from drone(i) to the target.
 
-%% Examples
+%% Example
 % [y_unit_array] = target_finder(D_pos_array, T_pos_vec)
 
 %%

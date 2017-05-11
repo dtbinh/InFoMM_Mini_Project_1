@@ -12,7 +12,7 @@ function [R] = direction_finder(M)
 % OUTPUT:
 %     R: {array} Unit vectors from drone(i) to drone(j).
 
-%% Examples
+%% Example
 % [r_unit_array] = direction_finder(D_pos_array)
 
 %%

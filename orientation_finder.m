@@ -12,7 +12,7 @@ function [A] = orientation_finder(M)
 % OUTPUT:
 %     A: {array} Ordered drone orientations (normed velocities).
 
-%% Examples
+%% Example
 % [v_unit_array] = orientation_finder(D_vel_array)
 
 %%

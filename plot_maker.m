@@ -1,4 +1,4 @@
-function [lines_to_draw] = plot_maker(N,T,dt,P,Q,R,V,Y1,Y2,t_vec,alpha,...
+function [] = plot_maker(N,T,dt,P,Q,R,V,Y1,Y2,t_vec,alpha,...
                                       beta)
 
 % Author: Joseph Field 
@@ -27,7 +27,7 @@ function [lines_to_draw] = plot_maker(N,T,dt,P,Q,R,V,Y1,Y2,t_vec,alpha,...
 % OUTPUT:
 %     : {}
 
-%% Examples
+%% Example
 % [] = plot_maker(4,5001,0.02,D_pos_array,D_vel_array,T_pos_vec,...
 %                 v_unit_array,Y1,Y2,all_time,1.5,0.5)
 

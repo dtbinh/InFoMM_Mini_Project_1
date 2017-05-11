@@ -14,7 +14,7 @@ function [] = update_maker(N)
 % OUTPUT:
 %     : {}
 
-%% Examples
+%% Example
 % [] = update_maker(6)
 
 %%

@@ -21,7 +21,7 @@ function [] = planar_tracking(N,L,T,a,b)
 % OUTPUT:
 %     : {}
 
-%% Examples
+%% Example
 % planar_tracking(4,100,5001,1.5,0.5)
 
 %%

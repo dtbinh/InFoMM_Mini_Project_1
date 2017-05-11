@@ -15,7 +15,7 @@ function [R] = relative_bearing(M)
 % OUTPUT:
 %     R: {array} Direction for paired drones (i,j).
 
-%% Examples
+%% Example
 % [r_angle_array] = relative_bearing(r_unit_direction_array)
 
 %%
