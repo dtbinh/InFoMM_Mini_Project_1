@@ -9,8 +9,8 @@ function [] = drone_calibration(M,dt)
 %     well as (N-1) velocity vectors, to allow each drone to find the exact
 %     position of ALL other drones.
 % INPUT: 
-%     M:   {array} Initial drone positions.
-%     dt: {scalar} Size of timestep.
+%     M:  {array} Initial drone positions.
+%     dt: {float} Size of timestep.
 % OUTPUT:
 %     : {}
 

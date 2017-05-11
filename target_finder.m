@@ -15,13 +15,21 @@ function [A] = target_finder(M,P)
 %     A:  {array} Ordered unit directions from drone(i) to the target.
 
 %% Examples
-% [y_unit_target_dir_array] = target_finder(drone_pos_array,target_pos_vec)
+% [y_unit_array] = target_finder(D_pos_array, T_pos_vec)
 
 %%
-Y = zeros(4,2);
-for m = 1:4
+
+% Initialise the holding matrix - this should work for any velocity vector
+% of size N x 2.
+[N,~] = size(M);
+Y = zeros(N,2);
+
+for m = 1:N
+    % Find the normalised direction vectors for each drone to the target.
     y = P - M(m,:);
     y = y/norm(y);
     Y(m,:) = y;
 end
+
+% Output the realised unit vector array.
 A = Y;

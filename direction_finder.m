@@ -17,7 +17,7 @@ function [R] = direction_finder(M)
 
 %%
 
-% Initialise the holding matrix - this should work for any position vectors
+% Initialise the holding matrix - this should work for any position vector
 % of size N x 2.
 [N,~] = size(M);
 A = zeros(N,2*N);

@@ -1,4 +1,4 @@
-function [] = planar_tracking(N)
+function [] = planar_tracking(N,L,T,a,b)
 
 % Author: Joseph Field 
 % Date:   May 2017.
@@ -9,19 +9,24 @@ function [] = planar_tracking(N)
 %     four individual drones and a single object to be tracked. In this
 %     formulation, we will impose all parameters, as well as the movement
 %     of the tracked object. These may become inputs in later iterations of
-%     this code.
+%     this code. NOTE: Having 'N' as an input variable means that we cannot
+%     easily plot the trajectories, so it is prudent to only visualise the
+%     trajectories for a specified N < VAL.
 % INPUT: 
-%     N: {scalar} Number of drones in the model.
+%     N: {int} Number of drones in the model.
+%     L: {float} Length of the simulation (seconds).
+%     T: {int} Number of data points wanted in the simulation.
+%     a: {float} 'alpha' in the original system equations.
+%     b: {float} 'beta' in the original system equations.
 % OUTPUT:
 %     : {}
 
 %% Examples
-% [] = planar_tracking(10)
+% planar_tracking(4,100,5001,1.5,0.5)
 
 %%
-close all; clc; format compact;
-
-N = 10;
+keepvars = {'N','L','T','a','b'};
+clearvars('-except', keepvars{:});close all; clc; format compact;
 
 % Set up the position and velocities of the individuals, setting the
 % tracked object to start at the origin, or some other point initialised by
@@ -31,153 +36,81 @@ N = 10;
 % Functional initialisation of the target's movement.
 Y1 = @(t) sin(t);
 Y2 = @(t) cos(t);
-% Y1 = @(t) 0;
-% Y2 = @(t) 0;
-target_pos_vec = [Y1(0),Y2(0)];
+T_pos_vec = [Y1(0),Y2(0)];
 
 % Random pos. initialisation AROUND the target
-drone_pos_array = repmat(target_pos_vec,N,1) + randn(N,2); 
+D_pos_array = repmat(T_pos_vec,N,1) + randn(N,2); 
 
 % Stationary initialisation.
-drone_vel_array = zeros(N,2);  
+D_vel_array = zeros(N,2);  
 
 % Random vel. initialisation.
-% drone_vel_array = randn(N,2);                
+% D_vel_array = randn(N,2);     
+
+% Compute all unit vectors {r,v,y} defined in the original formulation.
+[r_unit_array] = direction_finder(D_pos_array);
+[v_unit_array] = orientation_finder(D_vel_array);
+[y_unit_array] = target_finder(D_pos_array,T_pos_vec);
 
 % If wanted, plot the initial positions of all individuals, to check that
 % there is no initial problem, i.e., no initial overlapping of drones.
 if 1
-    figure();
-    hold on;
-    scatter(drone_pos_array(:,1),drone_pos_array(:,2), 100, 'g');
-    quiver(drone_pos_array(:,1),drone_pos_array(:,2),...
-           drone_vel_array(:,1),drone_vel_array(:,2), 'k')
-    scatter(target_pos_vec(1), target_pos_vec(2), 100, 'rx');
-    shg;
+    % Only plot figures if the system is not too large.
+    if N < 10
+        figure();
+        hold on;
+        
+        % Plot the locations of the drones and the target.
+        scatter(D_pos_array(:,1),D_pos_array(:,2), 100, 'g');
+        quiver(D_pos_array(:,1),D_pos_array(:,2),...
+               D_vel_array(:,1),D_vel_array(:,2), 'b')
+        scatter(T_pos_vec(1), T_pos_vec(2), 100, 'rx');
+        
+        % Plot the direction vectors from drones to all other objects.
+        for i = 1:N
+            quiver(repmat(D_pos_array(i,1),N,1),...
+                repmat(D_pos_array(i,2),N,1),-.3*r_unit_array(:,2*i-1),...
+                -.3*r_unit_array(:,2*i), 'k');
+            quiver(D_pos_array(i,1),D_pos_array(i,2),...
+                .3*y_unit_array(i,1),.3*y_unit_array(i,2),'r');
+        end
+
+        axis equal;
+        shg;
+    end
 end
-
-% Each drone will have an estimate of the position of the tracked target.
-% Currently this is just written is as a noisy measurement, but it can be
-% written as a functional form.
-est_pos_array = repmat(target_pos_vec,N,1) + 0.1*randn(N,2);
-
-% Plot the estimated positions if necessary.
-if 0
-    scatter(est_pos_array(:,1), est_pos_array(:,2), 100, 'g');
-end
-
-% Compute all unit vectors.
-[r_unit_direction_array] = direction_finder(drone_pos_array);
-[v_unit_orientation_array] = orientation_finder(drone_vel_array);
-[y_unit_target_dir_array] = target_finder(drone_pos_array,...
-                                          target_pos_vec);
 
 %%
 
 % Choose a time-length and number of time-steps, to then calculate the
 % entire deterministic trajectory of the target.
-S = 0;
-L = 100;
-T = 5001;
-dt = (L-S)/(T-1);
-all_time = linspace(S,L,T);
-target_trajectory = [Y1(all_time);Y2(all_time)]';
+dt = L/(T-1);
+all_time = linspace(0,L,T);
+T_trajectory = [Y1(all_time);Y2(all_time)]';
 
 % Control parameters.
-alpha = 10;
-beta = 0.5;
-v_sum = sum(v_unit_orientation_array,1);
+alpha = a;
+beta = b;
+vec_repulsion = sum(v_unit_array,1);
 
 % Define the functional form of dV/dt = F (Eq. 21) with the argument being 
 % the drone being calculated.
-F = @(i) alpha*y_unit_target_dir_array(i,:) - beta*v_sum + ...
-         beta*v_unit_orientation_array(i,:) - drone_vel_array(i,:);
+F = @(i) alpha*y_unit_array(i,:) - beta*vec_repulsion + ...
+         beta*v_unit_array(i,:) - D_vel_array(i,:);
 
 %%
 
-% Create new arrays to hold all previous trajectory points.
-drone_trajectory_array = zeros(T,2*N);
-drone_dir_array = zeros(T,2*N);
-drone_trajectory_array(1,:) = reshape(drone_pos_array',1,2*N);
-drone_dir_array(1,:) = reshape(drone_vel_array',1,2*N);
-drone_pos_previous = drone_trajectory_array(1,:);
-drone_vel_previous = drone_dir_array(1,:);
-
-% Set up the animation to view the trajectories.
-full_traj = figure();
-g1 = animatedline('Color','r','MaximumNumPoints',1,'Marker','x');
-g2 = animatedline('Color','b','MaximumNumPoints',1,'Marker','o');
-g3 = animatedline('Color','g','MaximumNumPoints',1,'Marker','o');
-g4 = animatedline('Color','m','MaximumNumPoints',1,'Marker','o');
-g5 = animatedline('Color','k','MaximumNumPoints',1,'Marker','o');
-
-% Make animated line shorter to make it easier to view.
-if 1
-    h1 = animatedline('Color','r','MaximumNumPoints',100);
-    h2 = animatedline('Color','b','MaximumNumPoints',100);
-    h3 = animatedline('Color','g','MaximumNumPoints',100);
-    h4 = animatedline('Color','m','MaximumNumPoints',100);
-    h5 = animatedline('Color','k','MaximumNumPoints',100);
+if N < 10
+    plot_maker(N,T,dt,D_pos_array,D_vel_array,T_pos_vec,...
+                 v_unit_array,Y1,Y2,all_time,alpha,beta);
 else
-    h1 = animatedline('Color','r');
-    h2 = animatedline('Color','b');
-    h3 = animatedline('Color','g');
-    h4 = animatedline('Color','m');
-    h5 = animatedline('Color','k');
-end
-axis([-3,3,-3,3]);
-legend('Target','Drone 1','Drone 2','Drone 3','Drone 4')
-shg;
-
-v_sum_vec = zeros(T,2);
-
-for t = 2:T
-    
-    % Reshape the arrays.
-    drone_pos_array = reshape(drone_pos_previous,2,4)';
-    drone_vel_array = reshape(drone_vel_previous,2,4)';
-    target_pos_vec = [Y1(all_time(t)),Y2(all_time(t))];
-
-    % Recompute all unit vectors.
-    [r_unit_direction_array] = direction_finder(drone_pos_array);
-    [v_unit_orientation_array] = orientation_finder(drone_vel_array);
-    [y_unit_target_dir_array] = target_finder(drone_pos_array,...
-                                              target_pos_vec);
-    v_sum = sum(v_unit_orientation_array,1);
-    v_sum_vec(t,:) = v_sum;
-    
-    % Update the drone trajectories.
-    drone_trajectory_array(t,:) = drone_pos_previous + ...
-                                  drone_vel_previous*dt;
-    drone_pos_previous = drone_trajectory_array(t,:);  
-    
-    % Update the drone velocities.
-    drone_dir_array(t,:) = drone_vel_previous + ...
-        (alpha*reshape(y_unit_target_dir_array',1,8) - ...
-        beta*repmat(v_sum,1,4) + ...
-        beta*reshape(v_unit_orientation_array',1,8) - ...
-        drone_vel_previous)*dt;
-    drone_vel_previous = drone_dir_array(t,:);
-    
-    % Update the drone positions.
-    addpoints(g1,target_trajectory(t,1),target_trajectory(t,2));
-    addpoints(g2,drone_trajectory_array(t,1),drone_trajectory_array(t,2));
-    addpoints(g3,drone_trajectory_array(t,3),drone_trajectory_array(t,4));
-    addpoints(g4,drone_trajectory_array(t,5),drone_trajectory_array(t,6));
-    addpoints(g5,drone_trajectory_array(t,7),drone_trajectory_array(t,8));
-    
-    % Add new points to the trajectory lines.
-    addpoints(h1,target_trajectory(t,1),target_trajectory(t,2));
-    addpoints(h2,drone_trajectory_array(t,1),drone_trajectory_array(t,2));
-    addpoints(h3,drone_trajectory_array(t,3),drone_trajectory_array(t,4));
-    addpoints(h4,drone_trajectory_array(t,5),drone_trajectory_array(t,6));
-    addpoints(h5,drone_trajectory_array(t,7),drone_trajectory_array(t,8));
-    
-    drawnow;
-    
+    sprintf('No plots will be made. N >= 10')
 end
 
 %%
+
+% If we want, we can also plot the magnitude of the repulsion vector over
+% time, to see how/if it balances within the system.
 norm_sum_vec = zeros(1,T);
 for i = 1:T
     norm_sum_vec(i) = norm(v_sum_vec(i,:));

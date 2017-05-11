@@ -17,8 +17,9 @@ function [A] = orientation_finder(M)
 
 %%
 
-% Initialise the holding matrix - this should work for any position vectors
+% Initialise the holding matrix - this should work for any velocity vector
 % of size N x 2.
+[N,~] = size(M);
 V = zeros(N,2);
 
 for m = 1:N

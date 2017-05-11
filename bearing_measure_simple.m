@@ -9,7 +9,7 @@ function [] = bearing_measure_simple(T)
 %     method. We choose certain parameters, to create a visual of how the
 %     parameters theta(t) and z(t) change over time.
 % INPUT: 
-%     T: {scalar} Total amount of time to run the visualisation.
+%     T: {float} Total amount of time to run the visualisation.
 % OUTPUT:
 %     : {}
 

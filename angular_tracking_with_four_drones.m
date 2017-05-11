@@ -36,8 +36,7 @@ D_vel_array = zeros(4,2);
 % Compute all unit vectors {r,v,y} defined in the original formulation.
 [r_unit_array] = direction_finder(D_pos_array);
 [v_unit_array] = orientation_finder(D_vel_array);
-[y_unit_array] = target_finder(D_pos_array,...
-                                          T_pos_vec);
+[y_unit_array] = target_finder(D_pos_array,T_pos_vec);
 
 % If needed, plot the initial positions of all individuals, to check that
 % there is no initial problem, i.e., no initial overlapping of drones.
@@ -48,15 +47,15 @@ if 1
     % Plot the locations of the drones and the target.
     scatter(D_pos_array(:,1),D_pos_array(:,2), 100, 'g');
     quiver(D_pos_array(:,1),D_pos_array(:,2),...
-           D_vel_array(:,1),D_vel_array(:,2), 'k')
+           D_vel_array(:,1),D_vel_array(:,2), 'b')
     scatter(T_pos_vec(1), T_pos_vec(2), 100, 'rx');
     
     % Plot the direction vectors from drones to all other objects.
     for i = 1:4
         quiver(repmat(D_pos_array(i,1),4,1),repmat(D_pos_array(i,2),4,1),...
-                   -.3*r_unit_array(:,2*i-1),-.3*r_unit_array(:,2*i), 'k');
+            -.3*r_unit_array(:,2*i-1),-.3*r_unit_array(:,2*i), 'k');
         quiver(D_pos_array(i,1),D_pos_array(i,2),...
-                          .3*y_unit_array(i,1),.3*y_unit_array(i,2),'r');
+            .3*y_unit_array(i,1),.3*y_unit_array(i,2),'r');
     end
     
     axis equal;
