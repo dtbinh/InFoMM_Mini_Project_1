@@ -11,7 +11,7 @@ function [] = bearing_measure_simple(T)
 % INPUT: 
 %     T: {float} Total amount of time to run the visualisation.
 % OUTPUT:
-%     : {}
+%      : {}
 
 %% Example
 % [] = bearing_measure_simple()
