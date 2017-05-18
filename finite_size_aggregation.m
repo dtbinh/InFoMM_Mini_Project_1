@@ -6,7 +6,7 @@ function [] = finite_size_aggregation(N,r,a,b,c,T)
 %
 % DESCRIPTION:
 %     Implementation of the simple swarm aggregation model given by (3.7)
-%     in 'Swarm Stability anf Optmization'.
+%     in 'Swarm Stability anf Optmization', using a finite size limitation.
 % INPUT: 
 %     N:   {int} Number of drones.
 %     r: {float} 'Radius' of the drone.
@@ -21,7 +21,7 @@ function [] = finite_size_aggregation(N,r,a,b,c,T)
 %      : {}
 
 %% Example
-% [] = finite_size_aggregation(10,1,0.001,1,1,5000)
+% [] = finite_size_aggregation(20,1,0.001,1,0.01,5000)
 
 %%
 keepvars = {'N','r','a','b','c','T'};
@@ -30,57 +30,68 @@ clearvars('-except', keepvars{:});close all; clc; format compact;
 % Initial positions, with check for overlapping.
 crash_flag = 1;
 while crash_flag ~= 0
-    pos_vec = 5*r*randn(N,2);
-    [idx_array,d] = knnsearch(pos_vec, pos_vec, 'k', 2);
+    pos_V = 0.5*N*r^2*randn(N,2);
+    % Check that no neighbours are within a radius of 2r.
+    [~,d] = knnsearch(pos_V, pos_V, 'k', 2);
     crash_flag = sum(d(:,2) < 2*r);
 end
 
 % Compute the centroid of all drones.
-centroid = sum(pos_vec,1)/N;
+centroid_V = sum(pos_V,1)/N;
 
 % Plot positions and the centroid.
 figure();
 hold on;
-scatter(pos_vec(:,1),pos_vec(:,2),100,'b');
-scatter(centroid(1),centroid(2),100,'r');
-ref_frame = [floor(min(pos_vec(:,1)))-1 ceil(max(pos_vec(:,1)))+1 ...
-      floor(min(pos_vec(:,2)))-1 ceil(max(pos_vec(:,2)))+1];
+scatter(pos_V(:,1),pos_V(:,2),100,'b');
+scatter(centroid_V(1),centroid_V(2),100,'r');
+% Set a reference frame for the axes, assuming that all drones will
+% converge to WITHIN.
+ref_frame = [floor(min(pos_V(:,1)))-1 ceil(max(pos_V(:,1)))+1 ...
+      floor(min(pos_V(:,2)))-1 ceil(max(pos_V(:,2)))+1];
 axis(ref_frame);
+axis([min(ref_frame), max(ref_frame), min(ref_frame), max(ref_frame)]);
+axis square;
 shg;
 
-% Find the equilibrium distance.
-delta = sqrt(c*log(b/a))
+% Compute the equilibrium distance.
+delta_S = sqrt(c*log(b/a));
 
 % Attraction-Repulsion function (3.7) in 'Swarm Systems...'
-func = @(y) -y*(a - b/(norm(y)^2 - 4*r^2)^2);
+att_rep_F = @(y) -y*(a - b/(norm(y)^2 - 4*r^2)^2);
 
 % Updating scheme for drone position.
-new_pos_vec = zeros(size(pos_vec));
+new_pos_V = zeros(size(pos_V));
 
 % Plot the trajectories of the drones.
 for t = 1:T
-    if mod(t,50) == 0;
-        t
+    % Time counter, to ensure the code is running.
+    if mod(t,50) == 0
+        t_count_S = t
     end
-    new_dir_vec = zeros(size(pos_vec));
+    
+    % Update the orientation.
+    new_dir_V = zeros(size(pos_V));
     for i = 1:N
         for j = 1:N
-            new_dir_vec(i,:) = new_dir_vec(i,:) + ...
-                func(pos_vec(i,:) - pos_vec(j,:));
+            new_dir_V(i,:) = new_dir_V(i,:) + ...
+                att_rep_F(pos_V(i,:) - pos_V(j,:));
         end
     end
-    new_pos_vec = pos_vec + new_dir_vec;
-    pos_vec = new_pos_vec;
-    centroid = sum(pos_vec,1)/N;
+    % This can change to be '+ dt*new_dir_V' if needed.
+    new_pos_V = pos_V + new_dir_V;
+    pos_V = new_pos_V;
+    centroid_V = sum(pos_V,1)/N;
     
+    % Is there a way to update the figure with scatter plots more easily
+    % than clearing the figure and then completely re-drawing it?
     clf;
     hold on;
-    scatter(pos_vec(:,1),pos_vec(:,2),100,'b');
-    scatter(centroid(1),centroid(2),100,'r');
+    scatter(pos_V(:,1),pos_V(:,2),100,'b');
+    scatter(centroid_V(1),centroid_V(2),100,'r');
     axis(ref_frame);
+    axis square
     drawnow;
+    
 end
 
-
-    
-    
+end

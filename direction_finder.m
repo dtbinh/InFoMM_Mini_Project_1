@@ -8,7 +8,7 @@ function [R] = direction_finder(M)
 %     This takes the array of drone positions and computes the unit
 %     relative direction between each. Note that r(i,j) = -r(j,i).
 % INPUT: 
-%     M: {array} Ordered drone positions.
+%     M: {array} Ordered drone positions, in Cartesian coordinates.
 % OUTPUT:
 %     R: {array} Unit vectors from drone(i) to drone(j).
 
@@ -16,12 +16,11 @@ function [R] = direction_finder(M)
 % [r_unit_array] = direction_finder(D_pos_array)
 
 %%
-
-% Initialise the holding matrix - this should work for any position vector
-% of size N x 2.
+% Initialise the holding matrix for any position vector of size N x 2.
 [N,~] = size(M);
-A = zeros(N,2*N);
+R = zeros(N,2*N);
 
+%
 for m = 1:(N-1)
     for n = (m + 1):N
         
@@ -34,12 +33,12 @@ for m = 1:(N-1)
         
         % The vectors are entered as V = [v(1),v(2)] into the array, such
         % that A is of the form [V,V,...,V,V; V,V,...,V,V; ...]..
-        A(m,1 + 2*(n-1)) = r(1);
-        A(m,2*n) = r(2);
-        A(n,2*m-1) = -r(1);
-        A(n,2*m) = -r(2);
+        R(m,1 + 2*(n-1)) = r(1);
+        R(m,2*n) = r(2);
+        R(n,2*m-1) = -r(1);
+        R(n,2*m) = -r(2);
     end
 end
 
-% Output the realised unit vector array.
-R = A;
+%
+end
