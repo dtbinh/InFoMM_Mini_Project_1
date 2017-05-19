@@ -18,7 +18,7 @@ function [] = reflection_distance_model(sq,r,k)
 %% Example
 % [] = reflection_distance_model(10,1,4)
 
-%% INCOMPLETE
+%%
 % sq = 10; r = 1; k = 8;
 keepvars = {'sq','r','k'};
 clearvars('-except', keepvars{:});close all; clc; format compact;
@@ -30,19 +30,19 @@ N = sq^2;
 k = k + 1;
 
 % Plot drones on a sq x sq lattice.
-dro_pos_V = [];
+position_vec = [];
 movement_flag = [];
 for i = 1:sq
     for j = 1:sq
         if i ~= 1 && i ~= sq && j ~= 1 && j ~= sq
             % Place drones on a noisy lattice.
-            dro_pos_V(end+1,:) = [i,j] + 0.5*rand(1,2);
+            position_vec(end+1,:) = [i,j] + 0.5*rand(1,2);
             % Place drones on a rigid lattice.
             % position_vec(end+1,:) = [i,j];
             movement_flag(end+1) = 1;
         else
             % Keep the outer domain rigid, and do not update positions.
-            dro_pos_V(end+1,:) = [i,j];
+            position_vec(end+1,:) = [i,j];
             movement_flag(end+1) = 0;
         end
     end
@@ -52,36 +52,36 @@ end
 figure();
 hold on;
 colour = linspace(1,10,N);
-scatter(dro_pos_V(:,1),dro_pos_V(:,2),100*r,colour);
+scatter(position_vec(:,1),position_vec(:,2),100*r,colour);
 axis([0 11 0 11]);
 shg;
 
 %%
-dro_pos_curr_V = dro_pos_V;
-new_pos_V = zeros(N,2);
+curr_pos_vec = position_vec;
+new_pos_vec = zeros(N,2);
 
 % KNN matches the drone with itself perfectly.
 k = k + 1;
-[idx_array,~] = knnsearch(dro_pos_curr_V, dro_pos_curr_V, 'k', k);
+[idx_array,d] = knnsearch(curr_pos_vec, curr_pos_vec, 'k', k);
 
 % Plot the vectors to the closest neighbours for a random subset.
-ran_subset_V = ceil(N*rand(sq,1));
+ran_subset = ceil(N*rand(sq,1));
 for i = 1:sq
-    p = ran_subset_V(i);
-    quiver(repmat(dro_pos_curr_V(p,1),1,k),repmat(dro_pos_curr_V(p,2),1,k),...
-        dro_pos_curr_V(idx_array(p,:),1) - repmat(dro_pos_curr_V(p,1),1,k),...
-        dro_pos_curr_V(idx_array(p,:),2) - repmat(dro_pos_curr_V(p,2),1,k));
+    p = ran_subset(i);
+    quiver(repmat(curr_pos_vec(p,1),1,k),repmat(curr_pos_vec(p,2),1,k),...
+        curr_pos_vec(idx_array(p,:),1) - repmat(curr_pos_vec(p,1),1,k),...
+        curr_pos_vec(idx_array(p,:),2) - repmat(curr_pos_vec(p,2),1,k));
 end
 shg;
 
 %%
 
-ran_subset_V = ceil(N*rand(sq,1));
-v = ran_subset_V(1);
+ran_subset = ceil(N*rand(sq,1));
+v = ran_subset(1);
 z = 1;
 while movement_flag(v) == 0
     z = z + 1;
-    v = ran_subset_V(z);
+    v = ran_subset(z);
 end
 
 for t = 1:1000
@@ -91,10 +91,10 @@ for t = 1:1000
     for i = 1:N
         if movement_flag(i) == 1
             ind = idx_array(i,:);
-            pts = dro_pos_V(ind,:);
+            pts = position_vec(ind,:);
             % Assume that our estimate of distance from the inverse-square
             % law is not great, so we will have errors.
-            pts = pts - dro_pos_curr_V(i,:) + 0.1*randn(k,1);
+            pts = pts - curr_pos_vec(i,:) + 0.1*randn(k,1);
             
             % Check if drones are too close, then they repel.
 %             for j = 1:k
@@ -119,38 +119,38 @@ for t = 1:1000
                 v_move = move_vec;
             end
             
-            new_pos_V(i,:) = dro_pos_curr_V(i,:) + 0.01*move_vec;
+            new_pos_vec(i,:) = curr_pos_vec(i,:) + 0.01*move_vec;
         else
-            new_pos_V(i,:) = dro_pos_curr_V(i,:);
+            new_pos_vec(i,:) = curr_pos_vec(i,:);
         end
     end
 
-    dro_pos_curr_V = new_pos_V;
+    curr_pos_vec = new_pos_vec;
 
     %%
 
     clf;
     hold on;
     colour = linspace(1,10,N);
-    scatter(dro_pos_curr_V(:,1),dro_pos_curr_V(:,2),100*r,colour);
+    scatter(curr_pos_vec(:,1),curr_pos_vec(:,2),100*r,colour);
     axis([0 11 0 11]);
 
     % Perform KNN.
-    [idx_array,d] = knnsearch(dro_pos_curr_V, dro_pos_curr_V, 'k', k);
+    [idx_array,d] = knnsearch(curr_pos_vec, curr_pos_vec, 'k', k);
 
     % Plot the vectors to the closest neighbours for a random subset.
-%     for i = 1:sq
-%         p = ran_subset(i);
-%         quiver(repmat(curr_pos_vec(p,1),1,k),repmat(curr_pos_vec(p,2),1,k),...
-%             curr_pos_vec(idx_array(p,:),1) - repmat(curr_pos_vec(p,1),1,k),...
-%             curr_pos_vec(idx_array(p,:),2) - repmat(curr_pos_vec(p,2),1,k));
-%     end
-% %         quiver(repmat(curr_pos_vec(v,1),1,k),repmat(curr_pos_vec(v,2),1,k),...
-% %             v_to_plot(:,1)',v_to_plot(:,2)');
-%         MV = quiver(curr_pos_vec(v,1),curr_pos_vec(v,2),...
-%                 v_move(1),v_move(2));
-%         set(MV,'linewidth',1);
-%         set(MV,'color',[0,0,0]);
+    for i = 1:sq
+        p = ran_subset(i);
+        quiver(repmat(curr_pos_vec(p,1),1,k),repmat(curr_pos_vec(p,2),1,k),...
+            curr_pos_vec(idx_array(p,:),1) - repmat(curr_pos_vec(p,1),1,k),...
+            curr_pos_vec(idx_array(p,:),2) - repmat(curr_pos_vec(p,2),1,k));
+    end
+%         quiver(repmat(curr_pos_vec(v,1),1,k),repmat(curr_pos_vec(v,2),1,k),...
+%             v_to_plot(:,1)',v_to_plot(:,2)');
+        MV = quiver(curr_pos_vec(v,1),curr_pos_vec(v,2),...
+                v_move(1),v_move(2));
+        set(MV,'linewidth',1);
+        set(MV,'color',[0,0,0]);
         
     drawnow;
 end

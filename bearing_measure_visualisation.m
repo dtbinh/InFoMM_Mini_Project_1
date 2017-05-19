@@ -31,12 +31,12 @@ rad1 = ceil(5*rand);
 rad2 = floor(8*rand);
 
 % Functional forms of the circular paths.
-circle1 = @(t) [sin(omega1*t + phi1), cos(omega1*t + phi1)];
-circle2 = @(t) [sin(omega2*t + phi2), cos(omega2*t + phi2)] + [5,2];
+circle1_F = @(t) [sin(omega1*t + phi1), cos(omega1*t + phi1)];
+circle2_F = @(t) [sin(omega2*t + phi2), cos(omega2*t + phi2)] + [5,2];
 
 % 
 timesteps = T/dt + 1;
-all_time = linspace(0,T,timesteps);
+all_time_V = linspace(0,T,timesteps);
 
 % Set up the animations to be drawn.
 angular_plot = subplot(1,2,2);
@@ -56,11 +56,11 @@ axis([-1,7,-2,4]);
 
 % Loop over all time to plot the trajectories, as well as the connecting
 % line between the two drones.
-for i = 1:length(all_time)
+for i = 1:length(all_time_V)
     %
-    t = all_time(i);
-    P = circle1(t);
-    Q = circle2(t);
+    t = all_time_V(i);
+    P = circle1_F(t);
+    Q = circle2_F(t);
     
     % Angular plot.
     addpoints(a1,t,atan((Q(2) - P(1))/(Q(1) - P(1))));

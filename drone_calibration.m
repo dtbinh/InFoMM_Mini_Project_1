@@ -17,6 +17,8 @@ function [] = drone_calibration(M,dt)
 %% Example
 % [knowledge] = drone_calibration(drone_pos_array)
 
+%% INCOMPLETE
+
 %%
 dt = 0.2;
 [N,~] = size(M);

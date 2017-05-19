@@ -9,7 +9,7 @@ function [] = angular_tracking_with_four_drones()
 %     four individual drones and a single object to be tracked. In this
 %     formulation, we will impose all parameters, as well as the movement
 %     of the tracked object. These may become inputs in later iterations of
-%     this code.
+%     this code. 
 % INPUT: 
 %     : {}
 % OUTPUT:
@@ -17,6 +17,8 @@ function [] = angular_tracking_with_four_drones()
 
 %% Example
 % [] = angular_tracking_with_four_drones()
+
+%% INCOMPLETE
 
 %%
 clear all; close all; clc; format compact;

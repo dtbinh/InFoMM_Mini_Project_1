@@ -1,19 +1,17 @@
-function [R] = relative_bearing(M)
+function [R,R_deg] = relative_bearing(M)
 
 % Author: Joseph Field 
 % Date:   May 2017.
 % Course: Mini Project One, University of Oxford.
 %
 % DESCRIPTION:
-%     This is the initial (simple) version of the tracking problem, using
-%     four individual drones and a single object to be tracked. In this
-%     formulation, we will impose all parameters, as well as the movement
-%     of the tracked object. These may become inputs in later iterations of
-%     this code.
+%     This code finds the relative bearing of drone(j) from drone(i), using
+%     the unit direction vectors of ach.
 % INPUT: 
 %     M: {array} Unit direction vectors for paired drones (i,j).
 % OUTPUT:
-%     R: {array} Direction for paired drones (i,j).
+%     R: {array} Bearing for paired drones (i,j), in radians.
+% R_deg: {array} Bearing for paired drones (i,j), in degrees.
 
 %% Example
 % [r_angle_array] = relative_bearing(r_unit_direction_array)
@@ -22,6 +20,9 @@ function [R] = relative_bearing(M)
 
 [m,~] = size(M);
 R = zeros(m);
+R_deg = R;
+
+%
 for m = 1:3
     for n = (m+1):4
         R(m,n) = atan(M(m,2*n)/M(m,1 + 2*(n-1))) + pi/2;
@@ -33,5 +34,7 @@ for m = 1:3
 end
 
 % Transform to degrees if necessary
-R = R/(2*pi) * 360;
-R(R<0) = R(R<0) + 360;
+R_deg = R/(2*pi) * 360;
+R_deg(R_deg<0) = R_deg(R_deg<0) + 360;
+
+end

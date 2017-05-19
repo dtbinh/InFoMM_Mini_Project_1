@@ -48,13 +48,12 @@ scatter(centroid_V(1),centroid_V(2),100,'r');
 % converge to WITHIN.
 ref_frame = [floor(min(pos_V(:,1)))-1 ceil(max(pos_V(:,1)))+1 ...
       floor(min(pos_V(:,2)))-1 ceil(max(pos_V(:,2)))+1];
-axis(ref_frame);
 axis([min(ref_frame), max(ref_frame), min(ref_frame), max(ref_frame)]);
 axis square;
 shg;
 
 % Compute the equilibrium distance.
-delta_S = sqrt(c*log(b/a));
+delta = sqrt(c*log(b/a));
 
 % Attraction-Repulsion function (3.7) in 'Swarm Systems...'
 att_rep_F = @(y) -y*(a - b/(norm(y)^2 - 4*r^2)^2);
@@ -66,7 +65,7 @@ new_pos_V = zeros(size(pos_V));
 for t = 1:T
     % Time counter, to ensure the code is running.
     if mod(t,50) == 0
-        t_count_S = t
+        t_count = t
     end
     
     % Update the orientation.
@@ -88,7 +87,7 @@ for t = 1:T
     hold on;
     scatter(pos_V(:,1),pos_V(:,2),100,'b');
     scatter(centroid_V(1),centroid_V(2),100,'r');
-    axis(ref_frame);
+    axis([min(ref_frame), max(ref_frame), min(ref_frame), max(ref_frame)]);
     axis square
     drawnow;
     

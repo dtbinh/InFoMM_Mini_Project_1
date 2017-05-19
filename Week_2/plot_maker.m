@@ -1,4 +1,5 @@
-function [] = plot_maker(N,T,dt,P,Q,R,V,Y1,Y2,t_vec,alpha,beta)
+function [] = plot_maker(N,T,dt,P,Q,R,V,Y1,Y2,t_vec,alpha,...
+                                      beta)
 
 % Author: Joseph Field 
 % Date:   May 2017.
@@ -27,21 +28,21 @@ function [] = plot_maker(N,T,dt,P,Q,R,V,Y1,Y2,t_vec,alpha,beta)
 %     : {}
 
 %% Example
-% [] = plot_maker(4,5001,0.02,dro_pos_A,dro_vel_A,tar_pos_V,...
-%                 v_unit_A,Y1,Y2,all_time_V,1.5,0.5)
+% [] = plot_maker(4,5001,0.02,D_pos_array,D_vel_array,T_pos_vec,...
+%                 v_unit_array,Y1,Y2,all_time,1.5,0.5)
 
 %%
 
-dro_traj_A = zeros(T,2*N);
-dro_direc_A = zeros(T,2*N);
-dro_traj_A(1,:) = reshape(P',1,2*N);
-dro_direc_A(1,:) = reshape(Q',1,2*N);
-dro_pos_prev_V = dro_traj_A(1,:);
-dro_vel_prev_V = dro_direc_A(1,:);
-tar_traj_V = [Y1(t_vec);Y2(t_vec)]';
+D_traj_array = zeros(T,2*N);
+D_dir_array = zeros(T,2*N);
+D_traj_array(1,:) = reshape(P',1,2*N);
+D_dir_array(1,:) = reshape(Q',1,2*N);
+D_pos_previous = D_traj_array(1,:);
+D_vel_previous = D_dir_array(1,:);
+T_trajectory = [Y1(t_vec);Y2(t_vec)]';
 
 if N == 1
-    trajectories_plot = figure();
+    traj_plot = figure();
 
     % Set up the animation to view the trajectories.
     T1 = animatedline('Color','r','MaximumNumPoints',1,'Marker','x');
@@ -55,47 +56,47 @@ if N == 1
     legend('Target','Drone 1')
     shg;
     
-    v_sum_V = zeros(T,2);
+    v_sum_vec = zeros(T,2);
 
     for t = 2:T
 
         % Reshape the arrays.
-        dro_pos_A = reshape(dro_pos_prev_V,2,N)';
-        dro_vel_A = reshape(dro_vel_prev_V,2,N)';
-        tar_pos_V = [Y1(t_vec(t)),Y2(t_vec(t))];
+        D_pos_array = reshape(D_pos_previous,2,N)';
+        D_vel_array = reshape(D_vel_previous,2,N)';
+        T_pos_vec = [Y1(t_vec(t)),Y2(t_vec(t))];
 
         % Recompute all unit vectors.
-        r_unit_A = direction_finder(dro_pos_A);
-        v_unit_A = orientation_finder(dro_vel_A);
-        y_unit_A = target_finder(dro_pos_A,tar_pos_V);
+        [r_unit_array] = direction_finder(D_pos_array);
+        [v_unit_array] = orientation_finder(D_vel_array);
+        [y_unit_array] = target_finder(D_pos_array,T_pos_vec);
         vec_repulsion = sum(R,1);
-        v_sum_V(t,:) = vec_repulsion;
+        v_sum_vec(t,:) = vec_repulsion;
 
         % Update the drone trajectories.
-        dro_traj_A(t,:) = dro_pos_prev_V + dro_vel_prev_V*dt;
-        dro_pos_prev_V = dro_traj_A(t,:);  
+        D_traj_array(t,:) = D_pos_previous + D_vel_previous*dt;
+        D_pos_previous = D_traj_array(t,:);  
 
         % Update the drone velocities.
-        dro_direc_A(t,:) = dro_vel_prev_V + ...
-            (alpha*reshape(y_unit_A',1,2*N) - ...
+        D_dir_array(t,:) = D_vel_previous + ...
+            (alpha*reshape(y_unit_array',1,2*N) - ...
             beta*repmat(vec_repulsion,1,N) + ...
-            beta*reshape(v_unit_A',1,2*N) - ...
-            dro_vel_prev_V)*dt;
-        dro_vel_prev_V = dro_direc_A(t,:);
+            beta*reshape(v_unit_array',1,2*N) - ...
+            D_vel_previous)*dt;
+        D_vel_previous = D_dir_array(t,:);
 
         % Update the drone positions.
-        addpoints(T1,tar_traj_V(t,1),tar_traj_V(t,2));
-        addpoints(D1,dro_traj_A(t,1),dro_traj_A(t,2));
+        addpoints(T1,T_trajectory(t,1),T_trajectory(t,2));
+        addpoints(D1,D_traj_array(t,1),D_traj_array(t,2));
 
         % Add new points to the trajectory lines.
-        addpoints(line_T1,tar_traj_V(t,1),tar_traj_V(t,2));
-        addpoints(line_D1,dro_traj_A(t,1),dro_traj_A(t,2));
+        addpoints(line_T1,T_trajectory(t,1),T_trajectory(t,2));
+        addpoints(line_D1,D_traj_array(t,1),D_traj_array(t,2));
 
         drawnow;
     end
     
 elseif N == 2
-    trajectories_plot = figure();
+    traj_plot = figure();
 
     % Set up the animation to view the trajectories.
     T1 = animatedline('Color','r','MaximumNumPoints',1,'Marker','x');
@@ -114,44 +115,44 @@ elseif N == 2
     for t = 2:T
 
         % Reshape the arrays.
-        dro_pos_A = reshape(dro_pos_prev_V,2,N)';
-        dro_vel_A = reshape(dro_vel_prev_V,2,N)';
-        tar_pos_V = [Y1(t_vec(t)),Y2(t_vec(t))];
+        D_pos_array = reshape(D_pos_previous,2,N)';
+        D_vel_array = reshape(D_vel_previous,2,N)';
+        T_pos_vec = [Y1(t_vec(t)),Y2(t_vec(t))];
 
         % Recompute all unit vectors.
-        [r_unit_A] = direction_finder(dro_pos_A);
-        [v_unit_A] = orientation_finder(dro_vel_A);
-        [y_unit_A] = target_finder(dro_pos_A,tar_pos_V);
+        [r_unit_array] = direction_finder(D_pos_array);
+        [v_unit_array] = orientation_finder(D_vel_array);
+        [y_unit_array] = target_finder(D_pos_array,T_pos_vec);
         vec_repulsion = sum(R,1);
-        v_sum_V(t,:) = vec_repulsion;
+        v_sum_vec(t,:) = vec_repulsion;
 
         % Update the drone trajectories.
-        dro_traj_A(t,:) = dro_pos_prev_V + dro_vel_prev_V*dt;
-        dro_pos_prev_V = dro_traj_A(t,:);  
+        D_traj_array(t,:) = D_pos_previous + D_vel_previous*dt;
+        D_pos_previous = D_traj_array(t,:);  
 
         % Update the drone velocities.
-        dro_direc_A(t,:) = dro_vel_prev_V + ...
-            (alpha*reshape(y_unit_A',1,2*N) - ...
+        D_dir_array(t,:) = D_vel_previous + ...
+            (alpha*reshape(y_unit_array',1,2*N) - ...
             beta*repmat(vec_repulsion,1,N) + ...
-            beta*reshape(v_unit_A',1,2*N) - ...
-            dro_vel_prev_V)*dt;
-        dro_vel_prev_V = dro_direc_A(t,:);
+            beta*reshape(v_unit_array',1,2*N) - ...
+            D_vel_previous)*dt;
+        D_vel_previous = D_dir_array(t,:);
         
         % Update the drone positions.
-        addpoints(T1,tar_traj_V(t,1),tar_traj_V(t,2));
-        addpoints(D1,dro_traj_A(t,1),dro_traj_A(t,2));
-        addpoints(D2,dro_traj_A(t,3),dro_traj_A(t,4));
+        addpoints(T1,T_trajectory(t,1),T_trajectory(t,2));
+        addpoints(D1,D_traj_array(t,1),D_traj_array(t,2));
+        addpoints(D2,D_traj_array(t,3),D_traj_array(t,4));
 
         % Add new points to the trajectory lines.
-        addpoints(line_T1,tar_traj_V(t,1),tar_traj_V(t,2));
-        addpoints(line_D1,dro_traj_A(t,1),dro_traj_A(t,2));
-        addpoints(line_D2,dro_traj_A(t,3),dro_traj_A(t,4));
+        addpoints(line_T1,T_trajectory(t,1),T_trajectory(t,2));
+        addpoints(line_D1,D_traj_array(t,1),D_traj_array(t,2));
+        addpoints(line_D2,D_traj_array(t,3),D_traj_array(t,4));
         
         drawnow;
     end
     
 elseif N == 3
-    trajectories_plot = figure();
+    traj_plot = figure();
 
     % Set up the animation to view the trajectories.
     T1 = animatedline('Color','r','MaximumNumPoints',1,'Marker','x');
@@ -172,46 +173,46 @@ elseif N == 3
     for t = 2:T
 
         % Reshape the arrays.
-        dro_pos_A = reshape(dro_pos_prev_V,2,N)';
-        dro_vel_A = reshape(dro_vel_prev_V,2,N)';
-        tar_pos_V = [Y1(t_vec(t)),Y2(t_vec(t))];
+        D_pos_array = reshape(D_pos_previous,2,N)';
+        D_vel_array = reshape(D_vel_previous,2,N)';
+        T_pos_vec = [Y1(t_vec(t)),Y2(t_vec(t))];
 
         % Recompute all unit vectors.
-        [r_unit_A] = direction_finder(dro_pos_A);
-        [v_unit_A] = orientation_finder(dro_vel_A);
-        [y_unit_A] = target_finder(dro_pos_A,tar_pos_V);
+        [r_unit_array] = direction_finder(D_pos_array);
+        [v_unit_array] = orientation_finder(D_vel_array);
+        [y_unit_array] = target_finder(D_pos_array,T_pos_vec);
         vec_repulsion = sum(R,1);
-        v_sum_V(t,:) = vec_repulsion;
+        v_sum_vec(t,:) = vec_repulsion;
 
         % Update the drone trajectories.
-        dro_traj_A(t,:) = dro_pos_prev_V + dro_vel_prev_V*dt;
-        dro_pos_prev_V = dro_traj_A(t,:);  
+        D_traj_array(t,:) = D_pos_previous + D_vel_previous*dt;
+        D_pos_previous = D_traj_array(t,:);  
 
         % Update the drone velocities.
-        dro_direc_A(t,:) = dro_vel_prev_V + ...
-            (alpha*reshape(y_unit_A',1,2*N) - ...
+        D_dir_array(t,:) = D_vel_previous + ...
+            (alpha*reshape(y_unit_array',1,2*N) - ...
             beta*repmat(vec_repulsion,1,N) + ...
-            beta*reshape(v_unit_A',1,2*N) - ...
-            dro_vel_prev_V)*dt;
-        dro_vel_prev_V = dro_direc_A(t,:);
+            beta*reshape(v_unit_array',1,2*N) - ...
+            D_vel_previous)*dt;
+        D_vel_previous = D_dir_array(t,:);
 
         % Update the drone positions.
-        addpoints(T1,tar_traj_V(t,1),tar_traj_V(t,2));
-        addpoints(D1,dro_traj_A(t,1),dro_traj_A(t,2));
-        addpoints(D2,dro_traj_A(t,3),dro_traj_A(t,4));
-        addpoints(D3,dro_traj_A(t,5),dro_traj_A(t,6));
+        addpoints(T1,T_trajectory(t,1),T_trajectory(t,2));
+        addpoints(D1,D_traj_array(t,1),D_traj_array(t,2));
+        addpoints(D2,D_traj_array(t,3),D_traj_array(t,4));
+        addpoints(D3,D_traj_array(t,5),D_traj_array(t,6));
 
         % Add new points to the trajectory lines.
-        addpoints(line_T1,tar_traj_V(t,1),tar_traj_V(t,2));
-        addpoints(line_D1,dro_traj_A(t,1),dro_traj_A(t,2));
-        addpoints(line_D2,dro_traj_A(t,3),dro_traj_A(t,4));
-        addpoints(line_D3,dro_traj_A(t,5),dro_traj_A(t,6));
+        addpoints(line_T1,T_trajectory(t,1),T_trajectory(t,2));
+        addpoints(line_D1,D_traj_array(t,1),D_traj_array(t,2));
+        addpoints(line_D2,D_traj_array(t,3),D_traj_array(t,4));
+        addpoints(line_D3,D_traj_array(t,5),D_traj_array(t,6));
 
         drawnow;
     end
     
 elseif N == 4
-    trajectories_plot = figure();
+    traj_plot = figure();
 
     % Set up the animation to view the trajectories.
     T1 = animatedline('Color','r','MaximumNumPoints',1,'Marker','x');
@@ -234,49 +235,49 @@ elseif N == 4
     for t = 2:T
 
         % Reshape the arrays.
-        dro_pos_A = reshape(dro_pos_prev_V,2,N)';
-        dro_vel_A = reshape(dro_vel_prev_V,2,N)';
-        tar_pos_V = [Y1(t_vec(t)),Y2(t_vec(t))];
+        D_pos_array = reshape(D_pos_previous,2,N)';
+        D_vel_array = reshape(D_vel_previous,2,N)';
+        T_pos_vec = [Y1(t_vec(t)),Y2(t_vec(t))];
 
         % Recompute all unit vectors.
-        [r_unit_A] = direction_finder(dro_pos_A);
-        [v_unit_A] = orientation_finder(dro_vel_A);
-        [y_unit_A] = target_finder(dro_pos_A,tar_pos_V);
+        [r_unit_array] = direction_finder(D_pos_array);
+        [v_unit_array] = orientation_finder(D_vel_array);
+        [y_unit_array] = target_finder(D_pos_array,T_pos_vec);
         vec_repulsion = sum(R,1);
-        v_sum_V(t,:) = vec_repulsion;
+        v_sum_vec(t,:) = vec_repulsion;
 
         % Update the drone trajectories.
-        dro_traj_A(t,:) = dro_pos_prev_V + dro_vel_prev_V*dt;
-        dro_pos_prev_V = dro_traj_A(t,:);  
+        D_traj_array(t,:) = D_pos_previous + D_vel_previous*dt;
+        D_pos_previous = D_traj_array(t,:);  
 
         % Update the drone velocities.
-        dro_direc_A(t,:) = dro_vel_prev_V + ...
-            (alpha*reshape(y_unit_A',1,2*N) - ...
+        D_dir_array(t,:) = D_vel_previous + ...
+            (alpha*reshape(y_unit_array',1,2*N) - ...
             beta*repmat(vec_repulsion,1,N) + ...
-            beta*reshape(v_unit_A',1,2*N) - ...
-            dro_vel_prev_V)*dt;
-        dro_vel_prev_V = dro_direc_A(t,:);
+            beta*reshape(v_unit_array',1,2*N) - ...
+            D_vel_previous)*dt;
+        D_vel_previous = D_dir_array(t,:);
 
         % Update the drone positions.
-        addpoints(T1,tar_traj_V(t,1),tar_traj_V(t,2));
-        addpoints(D1,dro_traj_A(t,1),dro_traj_A(t,2));
-        addpoints(D2,dro_traj_A(t,3),dro_traj_A(t,4));
-        addpoints(D3,dro_traj_A(t,5),dro_traj_A(t,6));
-        addpoints(D4,dro_traj_A(t,7),dro_traj_A(t,8));
+        addpoints(T1,T_trajectory(t,1),T_trajectory(t,2));
+        addpoints(D1,D_traj_array(t,1),D_traj_array(t,2));
+        addpoints(D2,D_traj_array(t,3),D_traj_array(t,4));
+        addpoints(D3,D_traj_array(t,5),D_traj_array(t,6));
+        addpoints(D4,D_traj_array(t,7),D_traj_array(t,8));
 
 
         % Add new points to the trajectory lines.
-        addpoints(line_T1,tar_traj_V(t,1),tar_traj_V(t,2));
-        addpoints(line_D1,dro_traj_A(t,1),dro_traj_A(t,2));
-        addpoints(line_D2,dro_traj_A(t,3),dro_traj_A(t,4));
-        addpoints(line_D3,dro_traj_A(t,5),dro_traj_A(t,6));
-        addpoints(line_D4,dro_traj_A(t,7),dro_traj_A(t,8));
+        addpoints(line_T1,T_trajectory(t,1),T_trajectory(t,2));
+        addpoints(line_D1,D_traj_array(t,1),D_traj_array(t,2));
+        addpoints(line_D2,D_traj_array(t,3),D_traj_array(t,4));
+        addpoints(line_D3,D_traj_array(t,5),D_traj_array(t,6));
+        addpoints(line_D4,D_traj_array(t,7),D_traj_array(t,8));
 
         drawnow;
     end
     
 elseif N == 5
-    trajectories_plot = figure();
+    traj_plot = figure();
 
     % Set up the animation to view the trajectories.
     T1 = animatedline('Color','r','MaximumNumPoints',1,'Marker','x');
@@ -302,51 +303,51 @@ elseif N == 5
     for t = 2:T
 
         % Reshape the arrays.
-        dro_pos_A = reshape(dro_pos_prev_V,2,N)';
-        dro_vel_A = reshape(dro_vel_prev_V,2,N)';
-        tar_pos_V = [Y1(t_vec(t)),Y2(t_vec(t))];
+        D_pos_array = reshape(D_pos_previous,2,N)';
+        D_vel_array = reshape(D_vel_previous,2,N)';
+        T_pos_vec = [Y1(t_vec(t)),Y2(t_vec(t))];
 
         % Recompute all unit vectors.
-        [r_unit_A] = direction_finder(dro_pos_A);
-        [v_unit_A] = orientation_finder(dro_vel_A);
-        [y_unit_A] = target_finder(dro_pos_A,tar_pos_V);
+        [r_unit_array] = direction_finder(D_pos_array);
+        [v_unit_array] = orientation_finder(D_vel_array);
+        [y_unit_array] = target_finder(D_pos_array,T_pos_vec);
         vec_repulsion = sum(R,1);
-        v_sum_V(t,:) = vec_repulsion;
+        v_sum_vec(t,:) = vec_repulsion;
 
         % Update the drone trajectories.
-        dro_traj_A(t,:) = dro_pos_prev_V + dro_vel_prev_V*dt;
-        dro_pos_prev_V = dro_traj_A(t,:);  
+        D_traj_array(t,:) = D_pos_previous + D_vel_previous*dt;
+        D_pos_previous = D_traj_array(t,:);  
 
         % Update the drone velocities.
-        dro_direc_A(t,:) = dro_vel_prev_V + ...
-            (alpha*reshape(y_unit_A',1,2*N) - ...
+        D_dir_array(t,:) = D_vel_previous + ...
+            (alpha*reshape(y_unit_array',1,2*N) - ...
             beta*repmat(vec_repulsion,1,N) + ...
-            beta*reshape(v_unit_A',1,2*N) - ...
-            dro_vel_prev_V)*dt;
-        dro_vel_prev_V = dro_direc_A(t,:);
+            beta*reshape(v_unit_array',1,2*N) - ...
+            D_vel_previous)*dt;
+        D_vel_previous = D_dir_array(t,:);
 
         % Update the drone positions.
-        addpoints(T1,tar_traj_V(t,1),tar_traj_V(t,2));
-        addpoints(D1,dro_traj_A(t,1),dro_traj_A(t,2));
-        addpoints(D2,dro_traj_A(t,3),dro_traj_A(t,4));
-        addpoints(D3,dro_traj_A(t,5),dro_traj_A(t,6));
-        addpoints(D4,dro_traj_A(t,7),dro_traj_A(t,8));
-        addpoints(D5,dro_traj_A(t,9),dro_traj_A(t,10));
+        addpoints(T1,T_trajectory(t,1),T_trajectory(t,2));
+        addpoints(D1,D_traj_array(t,1),D_traj_array(t,2));
+        addpoints(D2,D_traj_array(t,3),D_traj_array(t,4));
+        addpoints(D3,D_traj_array(t,5),D_traj_array(t,6));
+        addpoints(D4,D_traj_array(t,7),D_traj_array(t,8));
+        addpoints(D5,D_traj_array(t,9),D_traj_array(t,10));
 
 
         % Add new points to the trajectory lines.
-        addpoints(line_T1,tar_traj_V(t,1),tar_traj_V(t,2));
-        addpoints(line_D1,dro_traj_A(t,1),dro_traj_A(t,2));
-        addpoints(line_D2,dro_traj_A(t,3),dro_traj_A(t,4));
-        addpoints(line_D3,dro_traj_A(t,5),dro_traj_A(t,6));
-        addpoints(line_D4,dro_traj_A(t,7),dro_traj_A(t,8));
-        addpoints(line_D5,dro_traj_A(t,9),dro_traj_A(t,10));
+        addpoints(line_T1,T_trajectory(t,1),T_trajectory(t,2));
+        addpoints(line_D1,D_traj_array(t,1),D_traj_array(t,2));
+        addpoints(line_D2,D_traj_array(t,3),D_traj_array(t,4));
+        addpoints(line_D3,D_traj_array(t,5),D_traj_array(t,6));
+        addpoints(line_D4,D_traj_array(t,7),D_traj_array(t,8));
+        addpoints(line_D5,D_traj_array(t,9),D_traj_array(t,10));
 
         drawnow;
     end
     
 elseif N == 6
-    trajectories_plot = figure();
+    traj_plot = figure();
 
     % Set up the animation to view the trajectories.
     T1 = animatedline('Color','r','MaximumNumPoints',1,'Marker','x');
@@ -376,53 +377,53 @@ elseif N == 6
     for t = 2:T
 
         % Reshape the arrays.
-        dro_pos_A = reshape(dro_pos_prev_V,2,N)';
-        dro_vel_A = reshape(dro_vel_prev_V,2,N)';
-        tar_pos_V = [Y1(t_vec(t)),Y2(t_vec(t))];
+        D_pos_array = reshape(D_pos_previous,2,N)';
+        D_vel_array = reshape(D_vel_previous,2,N)';
+        T_pos_vec = [Y1(t_vec(t)),Y2(t_vec(t))];
 
         % Recompute all unit vectors.
-        [r_unit_A] = direction_finder(dro_pos_A);
-        [v_unit_A] = orientation_finder(dro_vel_A);
-        [y_unit_A] = target_finder(dro_pos_A,tar_pos_V);
+        [r_unit_array] = direction_finder(D_pos_array);
+        [v_unit_array] = orientation_finder(D_vel_array);
+        [y_unit_array] = target_finder(D_pos_array,T_pos_vec);
         vec_repulsion = sum(R,1);
-        v_sum_V(t,:) = vec_repulsion;
+        v_sum_vec(t,:) = vec_repulsion;
 
         % Update the drone trajectories.
-        dro_traj_A(t,:) = dro_pos_prev_V + dro_vel_prev_V*dt;
-        dro_pos_prev_V = dro_traj_A(t,:);  
+        D_traj_array(t,:) = D_pos_previous + D_vel_previous*dt;
+        D_pos_previous = D_traj_array(t,:);  
 
         % Update the drone velocities.
-        dro_direc_A(t,:) = dro_vel_prev_V + ...
-            (alpha*reshape(y_unit_A',1,2*N) - ...
+        D_dir_array(t,:) = D_vel_previous + ...
+            (alpha*reshape(y_unit_array',1,2*N) - ...
             beta*repmat(vec_repulsion,1,N) + ...
-            beta*reshape(v_unit_A',1,2*N) - ...
-            dro_vel_prev_V)*dt;
-        dro_vel_prev_V = dro_direc_A(t,:);
+            beta*reshape(v_unit_array',1,2*N) - ...
+            D_vel_previous)*dt;
+        D_vel_previous = D_dir_array(t,:);
 
         % Update the drone positions.
-        addpoints(T1,tar_traj_V(t,1),tar_traj_V(t,2));
-        addpoints(D1,dro_traj_A(t,1),dro_traj_A(t,2));
-        addpoints(D2,dro_traj_A(t,3),dro_traj_A(t,4));
-        addpoints(D3,dro_traj_A(t,5),dro_traj_A(t,6));
-        addpoints(D4,dro_traj_A(t,7),dro_traj_A(t,8));
-        addpoints(D5,dro_traj_A(t,9),dro_traj_A(t,10));
-        addpoints(D6,dro_traj_A(t,11),dro_traj_A(t,12));
+        addpoints(T1,T_trajectory(t,1),T_trajectory(t,2));
+        addpoints(D1,D_traj_array(t,1),D_traj_array(t,2));
+        addpoints(D2,D_traj_array(t,3),D_traj_array(t,4));
+        addpoints(D3,D_traj_array(t,5),D_traj_array(t,6));
+        addpoints(D4,D_traj_array(t,7),D_traj_array(t,8));
+        addpoints(D5,D_traj_array(t,9),D_traj_array(t,10));
+        addpoints(D6,D_traj_array(t,11),D_traj_array(t,12));
 
 
         % Add new points to the trajectory lines.
-        addpoints(line_T1,tar_traj_V(t,1),tar_traj_V(t,2));
-        addpoints(line_D1,dro_traj_A(t,1),dro_traj_A(t,2));
-        addpoints(line_D2,dro_traj_A(t,3),dro_traj_A(t,4));
-        addpoints(line_D3,dro_traj_A(t,5),dro_traj_A(t,6));
-        addpoints(line_D4,dro_traj_A(t,7),dro_traj_A(t,8));
-        addpoints(line_D5,dro_traj_A(t,9),dro_traj_A(t,10));
-        addpoints(line_D6,dro_traj_A(t,11),dro_traj_A(t,12));
+        addpoints(line_T1,T_trajectory(t,1),T_trajectory(t,2));
+        addpoints(line_D1,D_traj_array(t,1),D_traj_array(t,2));
+        addpoints(line_D2,D_traj_array(t,3),D_traj_array(t,4));
+        addpoints(line_D3,D_traj_array(t,5),D_traj_array(t,6));
+        addpoints(line_D4,D_traj_array(t,7),D_traj_array(t,8));
+        addpoints(line_D5,D_traj_array(t,9),D_traj_array(t,10));
+        addpoints(line_D6,D_traj_array(t,11),D_traj_array(t,12));
 
         drawnow;
     end
     
 elseif N == 7
-    trajectories_plot = figure();
+    traj_plot = figure();
 
     % Set up the animation to view the trajectories.
     T1 = animatedline('Color','r','MaximumNumPoints',1,'Marker','x');
@@ -455,55 +456,55 @@ elseif N == 7
     for t = 2:T
 
         % Reshape the arrays.
-        dro_pos_A = reshape(dro_pos_prev_V,2,N)';
-        dro_vel_A = reshape(dro_vel_prev_V,2,N)';
-        tar_pos_V = [Y1(t_vec(t)),Y2(t_vec(t))];
+        D_pos_array = reshape(D_pos_previous,2,N)';
+        D_vel_array = reshape(D_vel_previous,2,N)';
+        T_pos_vec = [Y1(t_vec(t)),Y2(t_vec(t))];
 
         % Recompute all unit vectors.
-        [r_unit_A] = direction_finder(dro_pos_A);
-        [v_unit_A] = orientation_finder(dro_vel_A);
-        [y_unit_A] = target_finder(dro_pos_A,tar_pos_V);
+        [r_unit_array] = direction_finder(D_pos_array);
+        [v_unit_array] = orientation_finder(D_vel_array);
+        [y_unit_array] = target_finder(D_pos_array,T_pos_vec);
         vec_repulsion = sum(R,1);
-        v_sum_V(t,:) = vec_repulsion;
+        v_sum_vec(t,:) = vec_repulsion;
 
         % Update the drone trajectories.
-        dro_traj_A(t,:) = dro_pos_prev_V + dro_vel_prev_V*dt;
-        dro_pos_prev_V = dro_traj_A(t,:);  
+        D_traj_array(t,:) = D_pos_previous + D_vel_previous*dt;
+        D_pos_previous = D_traj_array(t,:);  
 
         % Update the drone velocities.
-        dro_direc_A(t,:) = dro_vel_prev_V + ...
-            (alpha*reshape(y_unit_A',1,2*N) - ...
+        D_dir_array(t,:) = D_vel_previous + ...
+            (alpha*reshape(y_unit_array',1,2*N) - ...
             beta*repmat(vec_repulsion,1,N) + ...
-            beta*reshape(v_unit_A',1,2*N) - ...
-            dro_vel_prev_V)*dt;
-        dro_vel_prev_V = dro_direc_A(t,:);
+            beta*reshape(v_unit_array',1,2*N) - ...
+            D_vel_previous)*dt;
+        D_vel_previous = D_dir_array(t,:);
 
         % Update the drone positions.
-        addpoints(T1,tar_traj_V(t,1),tar_traj_V(t,2));
-        addpoints(D1,dro_traj_A(t,1),dro_traj_A(t,2));
-        addpoints(D2,dro_traj_A(t,3),dro_traj_A(t,4));
-        addpoints(D3,dro_traj_A(t,5),dro_traj_A(t,6));
-        addpoints(D4,dro_traj_A(t,7),dro_traj_A(t,8));
-        addpoints(D5,dro_traj_A(t,9),dro_traj_A(t,10));
-        addpoints(D6,dro_traj_A(t,11),dro_traj_A(t,12));
-        addpoints(D7,dro_traj_A(t,13),dro_traj_A(t,14));
+        addpoints(T1,T_trajectory(t,1),T_trajectory(t,2));
+        addpoints(D1,D_traj_array(t,1),D_traj_array(t,2));
+        addpoints(D2,D_traj_array(t,3),D_traj_array(t,4));
+        addpoints(D3,D_traj_array(t,5),D_traj_array(t,6));
+        addpoints(D4,D_traj_array(t,7),D_traj_array(t,8));
+        addpoints(D5,D_traj_array(t,9),D_traj_array(t,10));
+        addpoints(D6,D_traj_array(t,11),D_traj_array(t,12));
+        addpoints(D7,D_traj_array(t,13),D_traj_array(t,14));
 
 
         % Add new points to the trajectory lines.
-        addpoints(line_T1,tar_traj_V(t,1),tar_traj_V(t,2));
-        addpoints(line_D1,dro_traj_A(t,1),dro_traj_A(t,2));
-        addpoints(line_D2,dro_traj_A(t,3),dro_traj_A(t,4));
-        addpoints(line_D3,dro_traj_A(t,5),dro_traj_A(t,6));
-        addpoints(line_D4,dro_traj_A(t,7),dro_traj_A(t,8));
-        addpoints(line_D5,dro_traj_A(t,9),dro_traj_A(t,10));
-        addpoints(line_D6,dro_traj_A(t,11),dro_traj_A(t,12));
-        addpoints(line_D7,dro_traj_A(t,13),dro_traj_A(t,14));
+        addpoints(line_T1,T_trajectory(t,1),T_trajectory(t,2));
+        addpoints(line_D1,D_traj_array(t,1),D_traj_array(t,2));
+        addpoints(line_D2,D_traj_array(t,3),D_traj_array(t,4));
+        addpoints(line_D3,D_traj_array(t,5),D_traj_array(t,6));
+        addpoints(line_D4,D_traj_array(t,7),D_traj_array(t,8));
+        addpoints(line_D5,D_traj_array(t,9),D_traj_array(t,10));
+        addpoints(line_D6,D_traj_array(t,11),D_traj_array(t,12));
+        addpoints(line_D7,D_traj_array(t,13),D_traj_array(t,14));
 
         drawnow;
     end
     
 elseif N == 8
-    trajectories_plot = figure();
+    traj_plot = figure();
 
     % Set up the animation to view the trajectories.
     T1 = animatedline('Color','r','MaximumNumPoints',1,'Marker','x');
@@ -539,57 +540,57 @@ elseif N == 8
     for t = 2:T
 
         % Reshape the arrays.
-        dro_pos_A = reshape(dro_pos_prev_V,2,N)';
-        dro_vel_A = reshape(dro_vel_prev_V,2,N)';
-        tar_pos_V = [Y1(t_vec(t)),Y2(t_vec(t))];
+        D_pos_array = reshape(D_pos_previous,2,N)';
+        D_vel_array = reshape(D_vel_previous,2,N)';
+        T_pos_vec = [Y1(t_vec(t)),Y2(t_vec(t))];
 
         % Recompute all unit vectors.
-        [r_unit_A] = direction_finder(dro_pos_A);
-        [v_unit_A] = orientation_finder(dro_vel_A);
-        [y_unit_A] = target_finder(dro_pos_A,tar_pos_V);
+        [r_unit_array] = direction_finder(D_pos_array);
+        [v_unit_array] = orientation_finder(D_vel_array);
+        [y_unit_array] = target_finder(D_pos_array,T_pos_vec);
         vec_repulsion = sum(R,1);
-        v_sum_V(t,:) = vec_repulsion;
+        v_sum_vec(t,:) = vec_repulsion;
 
         % Update the drone trajectories.
-        dro_traj_A(t,:) = dro_pos_prev_V + dro_vel_prev_V*dt;
-        dro_pos_prev_V = dro_traj_A(t,:);  
+        D_traj_array(t,:) = D_pos_previous + D_vel_previous*dt;
+        D_pos_previous = D_traj_array(t,:);  
 
         % Update the drone velocities.
-        dro_direc_A(t,:) = dro_vel_prev_V + ...
-            (alpha*reshape(y_unit_A',1,2*N) - ...
+        D_dir_array(t,:) = D_vel_previous + ...
+            (alpha*reshape(y_unit_array',1,2*N) - ...
             beta*repmat(vec_repulsion,1,N) + ...
-            beta*reshape(v_unit_A',1,2*N) - ...
-            dro_vel_prev_V)*dt;
-        dro_vel_prev_V = dro_direc_A(t,:);
+            beta*reshape(v_unit_array',1,2*N) - ...
+            D_vel_previous)*dt;
+        D_vel_previous = D_dir_array(t,:);
 
         % Update the drone positions.
-        addpoints(T1,tar_traj_V(t,1),tar_traj_V(t,2));
-        addpoints(D1,dro_traj_A(t,1),dro_traj_A(t,2));
-        addpoints(D2,dro_traj_A(t,3),dro_traj_A(t,4));
-        addpoints(D3,dro_traj_A(t,5),dro_traj_A(t,6));
-        addpoints(D4,dro_traj_A(t,7),dro_traj_A(t,8));
-        addpoints(D5,dro_traj_A(t,9),dro_traj_A(t,10));
-        addpoints(D6,dro_traj_A(t,11),dro_traj_A(t,12));
-        addpoints(D7,dro_traj_A(t,13),dro_traj_A(t,14));
-        addpoints(D8,dro_traj_A(t,15),dro_traj_A(t,16));
+        addpoints(T1,T_trajectory(t,1),T_trajectory(t,2));
+        addpoints(D1,D_traj_array(t,1),D_traj_array(t,2));
+        addpoints(D2,D_traj_array(t,3),D_traj_array(t,4));
+        addpoints(D3,D_traj_array(t,5),D_traj_array(t,6));
+        addpoints(D4,D_traj_array(t,7),D_traj_array(t,8));
+        addpoints(D5,D_traj_array(t,9),D_traj_array(t,10));
+        addpoints(D6,D_traj_array(t,11),D_traj_array(t,12));
+        addpoints(D7,D_traj_array(t,13),D_traj_array(t,14));
+        addpoints(D8,D_traj_array(t,15),D_traj_array(t,16));
 
 
         % Add new points to the trajectory lines.
-        addpoints(line_T1,tar_traj_V(t,1),tar_traj_V(t,2));
-        addpoints(line_D1,dro_traj_A(t,1),dro_traj_A(t,2));
-        addpoints(line_D2,dro_traj_A(t,3),dro_traj_A(t,4));
-        addpoints(line_D3,dro_traj_A(t,5),dro_traj_A(t,6));
-        addpoints(line_D4,dro_traj_A(t,7),dro_traj_A(t,8));
-        addpoints(line_D5,dro_traj_A(t,9),dro_traj_A(t,10));
-        addpoints(line_D6,dro_traj_A(t,11),dro_traj_A(t,12));
-        addpoints(line_D7,dro_traj_A(t,13),dro_traj_A(t,14));
-        addpoints(line_D8,dro_traj_A(t,15),dro_traj_A(t,16));
+        addpoints(line_T1,T_trajectory(t,1),T_trajectory(t,2));
+        addpoints(line_D1,D_traj_array(t,1),D_traj_array(t,2));
+        addpoints(line_D2,D_traj_array(t,3),D_traj_array(t,4));
+        addpoints(line_D3,D_traj_array(t,5),D_traj_array(t,6));
+        addpoints(line_D4,D_traj_array(t,7),D_traj_array(t,8));
+        addpoints(line_D5,D_traj_array(t,9),D_traj_array(t,10));
+        addpoints(line_D6,D_traj_array(t,11),D_traj_array(t,12));
+        addpoints(line_D7,D_traj_array(t,13),D_traj_array(t,14));
+        addpoints(line_D8,D_traj_array(t,15),D_traj_array(t,16));
 
         drawnow;
     end
     
 elseif N == 9
-    trajectories_plot = figure();
+    traj_plot = figure();
 
     % Set up the animation to view the trajectories.
     T1 = animatedline('Color','r','MaximumNumPoints',1,'Marker','x');
@@ -628,53 +629,53 @@ elseif N == 9
     for t = 2:T
 
         % Reshape the arrays.
-        dro_pos_A = reshape(dro_pos_prev_V,2,N)';
-        dro_vel_A = reshape(dro_vel_prev_V,2,N)';
-        tar_pos_V = [Y1(t_vec(t)),Y2(t_vec(t))];
+        D_pos_array = reshape(D_pos_previous,2,N)';
+        D_vel_array = reshape(D_vel_previous,2,N)';
+        T_pos_vec = [Y1(t_vec(t)),Y2(t_vec(t))];
 
         % Recompute all unit vectors.
-        [r_unit_A] = direction_finder(dro_pos_A);
-        [v_unit_A] = orientation_finder(dro_vel_A);
-        [y_unit_A] = target_finder(dro_pos_A,tar_pos_V);
+        [r_unit_array] = direction_finder(D_pos_array);
+        [v_unit_array] = orientation_finder(D_vel_array);
+        [y_unit_array] = target_finder(D_pos_array,T_pos_vec);
         vec_repulsion = sum(R,1);
-        v_sum_V(t,:) = vec_repulsion;
+        v_sum_vec(t,:) = vec_repulsion;
 
         % Update the drone trajectories.
-        dro_traj_A(t,:) = dro_pos_prev_V + dro_vel_prev_V*dt;
-        dro_pos_prev_V = dro_traj_A(t,:);  
+        D_traj_array(t,:) = D_pos_previous + D_vel_previous*dt;
+        D_pos_previous = D_traj_array(t,:);  
 
         % Update the drone velocities.
-        dro_direc_A(t,:) = dro_vel_prev_V + ...
-            (alpha*reshape(y_unit_A',1,2*N) - ...
+        D_dir_array(t,:) = D_vel_previous + ...
+            (alpha*reshape(y_unit_array',1,2*N) - ...
             beta*repmat(vec_repulsion,1,N) + ...
-            beta*reshape(v_unit_A',1,2*N) - ...
-            dro_vel_prev_V)*dt;
-        dro_vel_prev_V = dro_direc_A(t,:);
+            beta*reshape(v_unit_array',1,2*N) - ...
+            D_vel_previous)*dt;
+        D_vel_previous = D_dir_array(t,:);
 
         % Update the drone positions.
-        addpoints(T1,tar_traj_V(t,1),tar_traj_V(t,2));
-        addpoints(D1,dro_traj_A(t,1),dro_traj_A(t,2));
-        addpoints(D2,dro_traj_A(t,3),dro_traj_A(t,4));
-        addpoints(D3,dro_traj_A(t,5),dro_traj_A(t,6));
-        addpoints(D4,dro_traj_A(t,7),dro_traj_A(t,8));
-        addpoints(D5,dro_traj_A(t,9),dro_traj_A(t,10));
-        addpoints(D6,dro_traj_A(t,11),dro_traj_A(t,12));
-        addpoints(D7,dro_traj_A(t,13),dro_traj_A(t,14));
-        addpoints(D8,dro_traj_A(t,15),dro_traj_A(t,16));
-        addpoints(D9,dro_traj_A(t,17),dro_traj_A(t,18));
+        addpoints(T1,T_trajectory(t,1),T_trajectory(t,2));
+        addpoints(D1,D_traj_array(t,1),D_traj_array(t,2));
+        addpoints(D2,D_traj_array(t,3),D_traj_array(t,4));
+        addpoints(D3,D_traj_array(t,5),D_traj_array(t,6));
+        addpoints(D4,D_traj_array(t,7),D_traj_array(t,8));
+        addpoints(D5,D_traj_array(t,9),D_traj_array(t,10));
+        addpoints(D6,D_traj_array(t,11),D_traj_array(t,12));
+        addpoints(D7,D_traj_array(t,13),D_traj_array(t,14));
+        addpoints(D8,D_traj_array(t,15),D_traj_array(t,16));
+        addpoints(D9,D_traj_array(t,17),D_traj_array(t,18));
 
 
         % Add new points to the trajectory lines.
-        addpoints(line_T1,tar_traj_V(t,1),tar_traj_V(t,2));
-        addpoints(line_D1,dro_traj_A(t,1),dro_traj_A(t,2));
-        addpoints(line_D2,dro_traj_A(t,3),dro_traj_A(t,4));
-        addpoints(line_D3,dro_traj_A(t,5),dro_traj_A(t,6));
-        addpoints(line_D4,dro_traj_A(t,7),dro_traj_A(t,8));
-        addpoints(line_D5,dro_traj_A(t,9),dro_traj_A(t,10));
-        addpoints(line_D6,dro_traj_A(t,11),dro_traj_A(t,12));
-        addpoints(line_D7,dro_traj_A(t,13),dro_traj_A(t,14));
-        addpoints(line_D8,dro_traj_A(t,15),dro_traj_A(t,16));
-        addpoints(line_D9,dro_traj_A(t,17),dro_traj_A(t,18));
+        addpoints(line_T1,T_trajectory(t,1),T_trajectory(t,2));
+        addpoints(line_D1,D_traj_array(t,1),D_traj_array(t,2));
+        addpoints(line_D2,D_traj_array(t,3),D_traj_array(t,4));
+        addpoints(line_D3,D_traj_array(t,5),D_traj_array(t,6));
+        addpoints(line_D4,D_traj_array(t,7),D_traj_array(t,8));
+        addpoints(line_D5,D_traj_array(t,9),D_traj_array(t,10));
+        addpoints(line_D6,D_traj_array(t,11),D_traj_array(t,12));
+        addpoints(line_D7,D_traj_array(t,13),D_traj_array(t,14));
+        addpoints(line_D8,D_traj_array(t,15),D_traj_array(t,16));
+        addpoints(line_D9,D_traj_array(t,17),D_traj_array(t,18));
 
         drawnow;
     end

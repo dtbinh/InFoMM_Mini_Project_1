@@ -66,15 +66,15 @@ for t = 1:T
     end
     
     % Update the orientation.
-    new_dir_vec = zeros(size(pos_V));
+    new_dir_V = zeros(size(pos_V));
     for i = 1:N
         for j = 1:N
-            new_dir_vec(i,:) = new_dir_vec(i,:) + ...
+            new_dir_V(i,:) = new_dir_V(i,:) + ...
                 att_rep_F(pos_V(i,:) - pos_V(j,:));
         end
     end
     % This can change to be '+ dt*new_dir_V' if needed.
-    new_pos_V = pos_V + new_dir_vec;
+    new_pos_V = pos_V + new_dir_V;
     pos_V = new_pos_V;
     centroid_V = sum(pos_V,1)/N;
     
@@ -84,10 +84,8 @@ for t = 1:T
     hold on;
     scatter(pos_V(:,1),pos_V(:,2),100,'b');
     scatter(centroid_V(1),centroid_V(2),100,'r');
-    axis(ref_frame);
+    axis([min(ref_frame), max(ref_frame), min(ref_frame), max(ref_frame)]);
     drawnow;
-end
-
 end
 
 end
