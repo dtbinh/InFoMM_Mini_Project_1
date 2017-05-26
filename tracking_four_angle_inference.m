@@ -54,7 +54,7 @@ dro_pos_A = repmat(tar_pos_V,4,1) + 2*randn(4,2);
 
 % Circular orbit initialisation.
 y_unit_A = target_finder(dro_pos_A,tar_pos_V);
-dro_vel_A = ([0, -pi/2; pi/2 0]*y_unit_A')';
+dro_vel_A = ([0, -1; 1 0]*y_unit_A')';
 
 % Compute all unit vectors {r,v,y} defined in the original formulation.
 r_unit_A = direction_finder(dro_pos_A);

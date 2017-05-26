@@ -1,4 +1,4 @@
-function [] = tracking_four_no_collapse(L,T,a,b,g,e)
+function [] = tracking_four_second_derivative(L,T,a,b,g,e)
 
 % Author: Joseph Field 
 % Date:   May 2017.
@@ -23,9 +23,9 @@ function [] = tracking_four_no_collapse(L,T,a,b,g,e)
 %     : {}
 
 %% Example
-% tracking_four_no_collapse(100,5001,1.5,0.5,10,1) {NOT GOOD}
-% tracking_four_no_collapse(100,5001,10,10,10,100) w/ slow circ
-% tracking_four_no_collapse(100,5001,5,5,50,100) w/ stationary
+% tracking_four_second_derivativee(100,5001,1.5,0.5,10,1) {NOT GOOD}
+% tracking_four_second_derivative(100,5001,10,10,10,100) w/ slow circ
+% tracking_four_second_derivative(100,5001,5,5,50,100) w/ stationary
 
 %%
 keepvars = {'L','T','a','b','g','e'};
@@ -58,9 +58,10 @@ dro_vel_A = ([0, -1; 1 0]*y_unit_A')';
 
 % Compute all unit vectors {r,v,y} defined in the original formulation.
 r_unit_A = direction_finder(dro_pos_A);
-r_prev_A = r_unit_A;
+r_prev_A = [r_unit_A,r_unit_A];
 v_unit_A = orientation_finder(dro_vel_A);
 y_unit_A = target_finder(dro_pos_A,tar_pos_V);
+y_prev_A = [y_unit_A,y_unit_A];
 
 % If wanted, plot the initial positions of all individuals, to check that
 % there is no initial problem, i.e., no initial overlapping of drones.
@@ -144,7 +145,7 @@ for t = 2:T
     
     % Compute the factor from which we shall try to avoid close distances,
     % i.e, we compute the differences for all r(i,j) from t-1 to t.
-    r_diff_A = r_prev_A - r_unit_A;
+    r_diff_A = r_unit_A - 2*r_prev_A(:,1:8) + r_prev_A(:,9:16);
     r_factor_A = zeros(4);
     for i = 1:3
         for j = (i+1):4
@@ -154,18 +155,20 @@ for t = 2:T
     end
     % This builds the array of ||r(i,t)@(t) - r(i,j)@(t-1)||.
     r_factor_A = r_factor_A + r_factor_A';
-    r_prev_A = r_unit_A;
+    r_prev_A(:,9:16) = r_prev_A(:,1:8);
+    r_prev_A(:,1:8) = r_unit_A;
     
     % Recompute all other unit vectors.
     v_unit_A = orientation_finder(dro_vel_A);
-    y_prev_A = y_unit_A;
     y_unit_A = target_finder(dro_pos_A,tar_pos_V);
-    y_diff_A = y_prev_A - y_unit_A;
+    y_diff_A = y_unit_A - 2*y_prev_A(:,1:2) + y_prev_A(:,3:4);
     for i = 1:4
         y_factor_vec(i) = 1*norm(y_diff_A(i,:));
     end
     y_repulsion_A = y_unit_A.*y_factor_vec;
     y_repulsion_V = reshape(y_repulsion_A',1,8);
+    y_prev_A(:,3:4) = y_prev_A(:,1:2);
+    y_prev_A(:,1:2) = y_unit_A;
     
     % Compute the repulsion terms.
     v_repulsion_V = sum(v_unit_A,1);
@@ -252,5 +255,11 @@ for t = 2:T
     drawnow;
     
 end
+
+y_FINAL = reshape(y_unit_A',1,8)
+v_FINAL = repmat(v_repulsion_V,1,4)
+g_FINAL = gamma_V*(L/T)
+e_FINAL = y_repulsion_V*(L/T)
+d_FINAL = dash_magnitude_V*min(50,t/10)
 
 end

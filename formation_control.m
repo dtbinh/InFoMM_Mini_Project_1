@@ -23,6 +23,7 @@ function [] = formation_control(N,r,A,B,DEL,T)
 % G = 5*[0 1 1 2 sqrt(3) 2; 1 0 1 1 1 sqrt(3); 1 1 0 sqrt(3) 1 1;
 %        2 1 sqrt(3) 0 1 2; sqrt(3) 1 1 1 0 1; 2 sqrt(3) 1 2 1 0]
 % formation_control(6,1,0.04*ones(6),1*ones(6),G,5000)
+% formation_control(N,1,0.04*ones(N),1*ones(N),D,5000)
 
 
 %%
@@ -32,7 +33,7 @@ clearvars('-except', keepvars{:});close all; clc; format compact;
 % Initial positions, with check for overlapping.
 crash_flag = 1;
 while crash_flag ~= 0
-    pos_V = 10*randn(N,2);
+    pos_V = 30*randn(N,2);
     % Check that no neighbours are within a radius of 2r.
     [~,d] = knnsearch(pos_V, pos_V, 'k', 2);
     crash_flag = sum(d(:,2) < 2*r);
@@ -42,7 +43,7 @@ end
 centroid_V = sum(pos_V,1)/N;
 
 % Plot positions and the centroid.
-figure();
+fig1 = figure();
 hold on;
 scatter(pos_V(:,1),pos_V(:,2),100,'b');
 scatter(centroid_V(1),centroid_V(2),100,'r');
@@ -128,6 +129,7 @@ for t = 1:T
     scatter(pos_V(:,1),pos_V(:,2),100,'b');
     scatter(centroid_V(1),centroid_V(2),100,'r');
     axis([min(ref_frame), max(ref_frame), min(ref_frame), max(ref_frame)]);
+    axis([-20, 20, -20, 20])
     axis square;
     drawnow;
 end

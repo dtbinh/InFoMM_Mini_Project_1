@@ -1,4 +1,4 @@
-function [] = tracking_twelve_no_collapse(L,T,a,b,g,e)
+function [] = tracking_twelve_slowdown(L,T,a,b,g,e)
 
 % Author: Joseph Field 
 % Date:   May 2017.
@@ -23,8 +23,8 @@ function [] = tracking_twelve_no_collapse(L,T,a,b,g,e)
 %     : {}
 
 %% Examples
-% tracking_twelve_no_collapse(100,5001,10,10,10,100) w/ slow circ
-% tracking_twelve_no_collapse(100,5001,5,5,50,100) w/ stationary
+% tracking_twelve_slowdown(100,5001,10,10,10,100) w/ slow circ
+% tracking_twelve_slowdown(100,5001,5,5,50,100) w/ stationary
 
 %%
 keepvars = {'L','T','a','b','g','e'};
@@ -43,7 +43,7 @@ Y2 = @(t) 0*sin(t/20);
 tar_pos_V = [Y1(0),Y2(0)];
 
 % Random pos. initialisation AROUND the target
-dro_pos_A = repmat(tar_pos_V,12,1) + 10*randn(12,2);
+dro_pos_A = repmat(tar_pos_V,12,1) + 5*randn(12,2);
 centroid_V = sum(dro_pos_A,1)/12;
 
 % Stationary initialisation.
@@ -95,6 +95,9 @@ alpha = a;
 beta = b;
 gamma = g;
 eta = e;
+alpha_F =@(t) a;
+beta_F =@(t) b;
+eta_F =@(t) e;
 
 % Create new arrays to hold all previous trajectory points.
 dro_traj_A = zeros(T,24);
@@ -135,7 +138,7 @@ h10 = animatedline('Color','b','MaximumNumPoints',20,'LineStyle','--');
 h11 = animatedline('Color','r','MaximumNumPoints',20,'LineStyle','--');
 h12 = animatedline('Color','m','MaximumNumPoints',20,'LineStyle','--');
 h13 = animatedline('Color','k','MaximumNumPoints',20,'LineStyle','--');
-axis([-30,30,-30,30]);
+axis([-20,20,-20,20]);
 legend('Target','Centroid','Drone 1','Drone 2','Drone 3','Drone 4',...
     'Drone 5','Drone 6','Drone 7','Drone 8','Drone 9','Drone 10',...
     'Drone 11','Drone 12');
@@ -147,11 +150,32 @@ y_factor_V = zeros(12,1);
 
 for t = 2:T
     
-    if mod(t,50) == 0
+    if mod(t,100) == 0
         % Time counter, to ensure the code is running.
         t_count = t
         sum(dash_magnitude_V)
+        alpha
+        beta
+        eta
     end
+    
+    % Reduction factor for alpha after a certain period.
+    if t == 2000
+        alpha_holder = alpha;
+        beta_holder = beta;
+        eta_holder = eta;
+        alpha_F = @(t) max(0,(alpha_holder - ...
+            ((t-2000)/(T-2500))*alpha_holder));
+        beta_F = @(t) max(0,(beta_holder - ...
+            ((t-2000)/(T-2500))*beta_holder));
+        eta_F = @(t) min(2*eta_holder,eta_holder + ...
+            (eta_holder)*(t-2000)/(T-2500));
+        % This weird form lets us look at the last 500 timesteps to see if
+        % the drones remain stationary.
+    end
+    alpha = alpha_F(t);
+    beta = beta_F(t);
+    eta= eta_F(t);
     
     % Reshape the arrays.
     dro_pos_A = reshape(dro_pos_prev_V,2,12)';
@@ -285,12 +309,6 @@ for t = 2:T
 %         dash_y_norm = norm(dash_magnitude_V - dash_magnitude_V_holder)
 %         norm(dash_magnitude_V) - norm(dash_magnitude_V_holder)
 %         pause
-%     end
-
-    % Check if the final term still has impact.
-%     if sum(dash_magnitude_V) > 0
-%         t
-%         sum(dash_magnitude_V)
 %     end
     
     % Update the drone positions.

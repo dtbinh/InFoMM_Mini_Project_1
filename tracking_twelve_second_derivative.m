@@ -1,4 +1,4 @@
-function [] = tracking_twelve_no_collapse(L,T,a,b,g,e)
+function [] = tracking_twelve_second_derivative(L,T,a,b,g,e)
 
 % Author: Joseph Field 
 % Date:   May 2017.
@@ -23,8 +23,8 @@ function [] = tracking_twelve_no_collapse(L,T,a,b,g,e)
 %     : {}
 
 %% Examples
-% tracking_twelve_no_collapse(100,5001,10,10,10,100) w/ slow circ
-% tracking_twelve_no_collapse(100,5001,5,5,50,100) w/ stationary
+% tracking_twelve_second_derivative(100,5001,10,10,10,100) w/ slow circ
+% tracking_twelve_second_derivative(100,5001,5,5,50,100) w/ stationary
 
 %%
 keepvars = {'L','T','a','b','g','e'};
@@ -43,7 +43,7 @@ Y2 = @(t) 0*sin(t/20);
 tar_pos_V = [Y1(0),Y2(0)];
 
 % Random pos. initialisation AROUND the target
-dro_pos_A = repmat(tar_pos_V,12,1) + 10*randn(12,2);
+dro_pos_A = repmat(tar_pos_V,12,1) + 5*randn(12,2);
 centroid_V = sum(dro_pos_A,1)/12;
 
 % Stationary initialisation.
@@ -58,9 +58,10 @@ dro_vel_A = 5*([0, -1; 1 0]*y_unit_A')';
 
 % Compute all unit vectors {r,v,y} defined in the original formulation.
 r_unit_A = direction_finder(dro_pos_A);
-r_prev_A = r_unit_A;
+r_prev_A = [r_unit_A,r_unit_A];
 v_unit_A = orientation_finder(dro_vel_A);
 y_unit_A = target_finder(dro_pos_A,tar_pos_V);
+y_prev_A = [y_unit_A,y_unit_A];
 
 % If wanted, plot the initial positions of all individuals, to check that
 % there is no initial problem, i.e., no initial overlapping of drones.
@@ -135,7 +136,7 @@ h10 = animatedline('Color','b','MaximumNumPoints',20,'LineStyle','--');
 h11 = animatedline('Color','r','MaximumNumPoints',20,'LineStyle','--');
 h12 = animatedline('Color','m','MaximumNumPoints',20,'LineStyle','--');
 h13 = animatedline('Color','k','MaximumNumPoints',20,'LineStyle','--');
-axis([-30,30,-30,30]);
+axis([-20,20,-20,20]);
 legend('Target','Centroid','Drone 1','Drone 2','Drone 3','Drone 4',...
     'Drone 5','Drone 6','Drone 7','Drone 8','Drone 9','Drone 10',...
     'Drone 11','Drone 12');
@@ -147,7 +148,7 @@ y_factor_V = zeros(12,1);
 
 for t = 2:T
     
-    if mod(t,50) == 0
+    if mod(t,100) == 0
         % Time counter, to ensure the code is running.
         t_count = t
         sum(dash_magnitude_V)
@@ -162,7 +163,7 @@ for t = 2:T
     r_unit_A = direction_finder(dro_pos_A);
     
     % Compute the factor from which we shall try to avoid close distances.
-    r_diff_A = r_prev_A - r_unit_A;
+    r_diff_A = r_unit_A - 2*r_prev_A(:,1:24) + r_prev_A(:,25:48);
     r_factor_A = zeros(12);
     for i = 1:11
         for j = (i+1):12
@@ -171,18 +172,20 @@ for t = 2:T
         end
     end
     r_factor_A = r_factor_A + r_factor_A';
-    r_prev_A = r_unit_A;
+    r_prev_A(:,25:48) = r_prev_A(:,1:24);
+    r_prev_A(:,1:24) = r_unit_A;
     
     % Recompute all other unit vectors.
     v_unit_A = orientation_finder(dro_vel_A);
-    y_prev_A = y_unit_A;
     y_unit_A = target_finder(dro_pos_A,tar_pos_V);
-    y_diff_A = y_prev_A - y_unit_A;
+    y_diff_A = y_unit_A - 2*y_prev_A(:,1:2) + y_prev_A(:,3:4);
     for i = 1:12
         y_factor_V(i) = 1*norm(y_diff_A(i,:));
     end
     y_repulsion_A = y_unit_A.*y_factor_V;
     y_repulsion_V = reshape(y_repulsion_A',1,24);
+    y_prev_A(:,3:4) = y_prev_A(:,1:2);
+    y_prev_A(:,1:2) = y_unit_A;
     
     % Compute the repulsion terms.
     v_repulsion_V = sum(v_unit_A,1);
@@ -227,7 +230,7 @@ for t = 2:T
     dash_sum_V = reshape(repmat(dash_sum_V,2,1),24,1)';
     % Divide by the penalizing factor, which will make everything increase.
 %     dash_sum_V = dash_sum_V/dash_factor_S;
-    dash_sum_V = dash_sum_V./((dash_factor_V).^2);
+    dash_sum_V = dash_sum_V./((dash_factor_V).^3);
 %     dash_sum_V = dash_sum_V./(dash_factor_V).^zeta;
     % Find the order of magnitude by which we can affect the 'bad' vectors.
     dash_magnitude_V = floor(floor(log10(dash_sum_V))/6);
@@ -247,12 +250,12 @@ for t = 2:T
     dro_pos_prev_V(19:20);
     dro_pos_prev_V(21:22);
     dro_pos_prev_V(23:24)],1)/12;
-
+   
 %     Testing the long-term dynamics by removing the gamma/eta terms.
-%     if t == 2000
-%         gamma = 0;
-%         eta = 0;
-%     end
+    if t == 2
+        gamma = 0;
+        eta = 0;
+    end
     
     % Update the drone velocities.
     dro_direc_A(t,:) = dro_vel_prev_V + ...
@@ -327,5 +330,11 @@ for t = 2:T
     drawnow;
     
 end
+
+y_FINAL = reshape(y_unit_A',1,24)
+v_FINAL = repmat(v_repulsion_V,1,12)
+g_FINAL = gamma_V
+e_FINAL = y_repulsion_V
+d_FINAL = dash_magnitude_V*min(50,t/10)
 
 end

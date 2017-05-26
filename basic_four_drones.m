@@ -1,4 +1,4 @@
-function [] = tracking_four_drones(L,T,a,b)
+function [] = basic_four_drones(L,T,a,b)
 
 % Author: Joseph Field 
 % Date:   May 2017.
@@ -19,7 +19,9 @@ function [] = tracking_four_drones(L,T,a,b)
 %      : {}
 
 %% Example
-% [] = tracking_four_drones(100,5001,1.5,0.5)
+% [] = basic_four_drones(100,5001,1.5,0.5)
+% [] = basic_four_drones(100,5001,10,10)
+% [] = basic_four_drones(800,20001,10,10)
 
 %%
 keepvars = {'L','T','a','b'};
@@ -31,8 +33,10 @@ clearvars('-except', keepvars{:}); close all; clc; format compact;
 % governed by the vector function [f(t), g(t)].
 
 % Functional initialisation of the target's movement.
-Y1 = @(t) 4*sin(t/15);
-Y2 = @(t) 4*cos(t/15);
+% Y1 = @(t) 5*sin(t/15);
+% Y2 = @(t) 5*cos(t/15);
+Y1 = @(t) 0*sin(t/15);
+Y2 = @(t) 0*cos(t/15);
 tar_pos_V = [Y1(0),Y2(0)];
 
 % Random pos. initialisation AROUND the target
@@ -42,7 +46,11 @@ dro_pos_A = repmat(tar_pos_V,4,1) + randn(4,2);
 dro_vel_A = zeros(4,2);  
 
 % Random vel. initialisation.
-% dro_vel_A = randn(4,2);    
+% dro_vel_A = randn(4,2);   
+
+% Circular orbit initialisation.
+% y_unit_A = target_finder(dro_pos_A,tar_pos_V);
+% dro_vel_A = ([0, -1; 1 0]*y_unit_A')';
 
 % Compute all unit vectors {r,v,y} defined in the original formulation.
 r_unit_A = direction_finder(dro_pos_A);
@@ -104,7 +112,7 @@ h2 = animatedline('Color','b','MaximumNumPoints',100);
 h3 = animatedline('Color','g','MaximumNumPoints',100);
 h4 = animatedline('Color','m','MaximumNumPoints',100);
 h5 = animatedline('Color','k','MaximumNumPoints',100);
-axis([-5,5,-5,5]);
+axis([-1,1,-1,1]);
 legend('Target','Drone 1','Drone 2','Drone 3','Drone 4')
 shg;
 
