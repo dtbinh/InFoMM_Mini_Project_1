@@ -23,7 +23,6 @@ function [] = tracking_four_second_derivative(L,T,a,b,g,e)
 %     : {}
 
 %% Example
-% tracking_four_second_derivativee(100,5001,1.5,0.5,10,1) {NOT GOOD}
 % tracking_four_second_derivative(100,5001,10,10,10,100) w/ slow circ
 % tracking_four_second_derivative(100,5001,5,5,50,100) w/ stationary
 
@@ -119,7 +118,9 @@ h2 = animatedline('Color','b','MaximumNumPoints',100);
 h3 = animatedline('Color','g','MaximumNumPoints',100);
 h4 = animatedline('Color','m','MaximumNumPoints',100);
 h5 = animatedline('Color','k','MaximumNumPoints',100);
-axis([-40,40,-40,40]);
+[R_calc] = radius_calc(a,b,g,4)
+sqax = R_calc + 10;
+axis([-sqax,sqax,-sqax,sqax]);
 legend('Target','Drone 1','Drone 2','Drone 3','Drone 4')
 shg;
 
@@ -133,6 +134,7 @@ for t = 2:T
     if mod(t,50) == 0
         % Time counter, to ensure the code is running.
         t_count = t
+        [R_est] = radius_est(dro_pos_A,4)
     end
     
     % Reshape the arrays.
@@ -150,7 +152,7 @@ for t = 2:T
     for i = 1:3
         for j = (i+1):4
             r_factor_A(i,j) = ...
-            1*norm([r_diff_A(i,2*j-1),r_diff_A(i,2*j)]);
+            1*norm([r_diff_A(i,2*j-1),r_diff_A(i,2*j)]/dt);
         end
     end
     % This builds the array of ||r(i,t)@(t) - r(i,j)@(t-1)||.
@@ -163,7 +165,7 @@ for t = 2:T
     y_unit_A = target_finder(dro_pos_A,tar_pos_V);
     y_diff_A = y_unit_A - 2*y_prev_A(:,1:2) + y_prev_A(:,3:4);
     for i = 1:4
-        y_factor_vec(i) = 1*norm(y_diff_A(i,:));
+        y_factor_vec(i) = 1*norm(y_diff_A(i,:)/dt);
     end
     y_repulsion_A = y_unit_A.*y_factor_vec;
     y_repulsion_V = reshape(y_repulsion_A',1,8);

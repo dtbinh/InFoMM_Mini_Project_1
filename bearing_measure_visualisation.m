@@ -9,14 +9,13 @@ function [] = bearing_measure_visualisation(T,dt)
 %     method. We choose certain parameters, to create a visual of how the
 %     parameters theta(t) and z(t) change over time.
 % INPUT: 
-%     T: {float} Total amount of time to run the visualisation. Will
-%     probably be taken as an integer.
+%     T:   {int} Total amount of time to run the visualisation.
 %    dt: {float} Timestep to be taken.
 % OUTPUT:
 %      : {}
 
 %% Example
-% [] = bearing_measure_visualisation(100,0.002)
+% bearing_measure_visualisation(100,0.002)
 
 %%
 keepvars = {'T','dt'};

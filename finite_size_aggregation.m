@@ -21,7 +21,7 @@ function [] = finite_size_aggregation(N,r,a,b,c,T)
 %      : {}
 
 %% Example
-% [] = finite_size_aggregation(20,1,0.001,1,0.01,5000)
+% finite_size_aggregation(20,1,0.001,1,0.01,500)
 
 %%
 keepvars = {'N','r','a','b','c','T'};
@@ -64,7 +64,7 @@ new_pos_V = zeros(size(pos_V));
 % Plot the trajectories of the drones.
 for t = 1:T
     % Time counter, to ensure the code is running.
-    if mod(t,50) == 0
+    if mod(t,100) == 0
         t_count = t
     end
     

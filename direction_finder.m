@@ -32,7 +32,7 @@ for m = 1:(N-1)
         end
         
         % The vectors are entered as V = [v(1),v(2)] into the array, such
-        % that A is of the form [V,V,...,V,V; V,V,...,V,V; ...]..
+        % that A is of the form [V,V,...,V,V; V,V,...,V,V; ...].
         R(m,1 + 2*(n-1)) = r(1);
         R(m,2*n) = r(2);
         R(n,2*m-1) = -r(1);

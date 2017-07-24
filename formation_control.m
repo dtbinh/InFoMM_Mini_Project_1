@@ -5,7 +5,7 @@ function [] = formation_control(N,r,A,B,DEL,T)
 % Course: Mini Project One, University of Oxford.
 %
 % DESCRIPTION:
-%     Implementation of the formation control model given by (Eq?)
+%     Implementation of the formation control model given by (3.36)
 %     in 'Swarm Stability and Optmization'.
 % INPUT: 
 %     N:   {int} Number of drones.
@@ -64,7 +64,7 @@ for i = 1:N
     end
 end
 
-% Attraction-Repulsion function (3.7) in 'Swarm Systems...'
+% Attraction-Repulsion function (3.36) in 'Swarm Systems...'
 att_rep_F = @(y,i,j) -y*(A(i,j) - B(i,j)*exp(-1*(norm(y)^2)/C(i,j)));
 
 % Updating scheme for drone position.

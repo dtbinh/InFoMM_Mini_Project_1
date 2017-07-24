@@ -18,7 +18,7 @@ function [] = swarm_aggregation(N,r,a,b,del,T)
 %      : {}
 
 %% Example
-% [] = swarm_aggregation(30,1,0.001,1,5,5000)
+% swarm_aggregation(30,1,0.001,1,5,5000)
 
 %%
 keepvars = {'N','r','a','b','del','T'};

@@ -6,7 +6,7 @@ function [R,R_deg] = relative_bearing(M)
 %
 % DESCRIPTION:
 %     This code finds the relative bearing of drone(j) from drone(i), using
-%     the unit direction vectors of ach.
+%     the unit direction vectors of each.
 % INPUT: 
 %     M: {array} Unit direction vectors for paired drones (i,j).
 % OUTPUT:

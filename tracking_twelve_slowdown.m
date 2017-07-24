@@ -1,4 +1,4 @@
-function [] = tracking_twelve_slowdown(L,T,a,b,g,e)
+function [] = tracking_twelve_slowdown(L,T,a,b,g,m)
 
 % Author: Joseph Field 
 % Date:   May 2017.
@@ -13,21 +13,20 @@ function [] = tracking_twelve_slowdown(L,T,a,b,g,e)
 %     problem: dV/dt = a*y - b*sum(v(j)) - b*V + g*sum(dr(ij)/dt)*r(rij).
 %     This may also be changed to include numerical second derivatives too.
 % INPUT: 
-%     L: {float} Length of the simulation (seconds).
+%     L: {float} Length of the simulation.
 %     T: {int} Number of data points wanted in the simulation.
 %     a: {float} 'alpha' in the original system equations.
 %     b: {float} 'beta' in the original system equations.
 %     g: {float} 'gamma' in the amended system equations.
-%     e: {float} 'eta' in the amended system equations.
+%     m: {float} 'mu' in the amended system equations.
 % OUTPUT:
 %     : {}
 
 %% Examples
-% tracking_twelve_slowdown(100,5001,10,10,10,100) w/ slow circ
-% tracking_twelve_slowdown(100,5001,5,5,50,100) w/ stationary
+% tracking_twelve_slowdown(100,5001,10,10,0.1,0)
 
 %%
-keepvars = {'L','T','a','b','g','e'};
+keepvars = {'L','T','a','b','g','m'};
 clearvars('-except', keepvars{:}); close all; clc; format compact;
 
 % Set up the position and velocities of the individuals, setting the
@@ -94,10 +93,12 @@ tar_trajectory_A = [Y1(all_time_V);Y2(all_time_V)]';
 alpha = a;
 beta = b;
 gamma = g;
-eta = e;
+mu = m;
 alpha_F =@(t) a;
 beta_F =@(t) b;
-eta_F =@(t) e;
+mu_F =@(t) m;
+G = gamma_summation(12);
+R_est = (b^2 + g*b*G)/a;
 
 % Create new arrays to hold all previous trajectory points.
 dro_traj_A = zeros(T,24);
@@ -153,29 +154,34 @@ for t = 2:T
     if mod(t,100) == 0
         % Time counter, to ensure the code is running.
         t_count = t
-        sum(dash_magnitude_V)
         alpha
         beta
-        eta
+        mu
     end
     
     % Reduction factor for alpha after a certain period.
     if t == 2000
         alpha_holder = alpha;
         beta_holder = beta;
-        eta_holder = eta;
+        mu_holder = mu;
         alpha_F = @(t) max(0,(alpha_holder - ...
             ((t-2000)/(T-2500))*alpha_holder));
         beta_F = @(t) max(0,(beta_holder - ...
             ((t-2000)/(T-2500))*beta_holder));
-        eta_F = @(t) min(2*eta_holder,eta_holder + ...
-            (eta_holder)*(t-2000)/(T-2500));
+%         mu_F = @(t) min(2*mu_holder,mu_holder + ...
+%             (mu_holder)*(t-2000)/(T-2500));
         % This weird form lets us look at the last 500 timesteps to see if
         % the drones remain stationary.
+        [R_calc] = radius_calc(10,10,0.1,12)
+        [R_est] = radius_est(dro_pos_A,12)
+        G = gamma_summation(12);
     end
+    
     alpha = alpha_F(t);
+%     beta = sqrt(R_est*alpha);
     beta = beta_F(t);
-    eta= eta_F(t);
+%     gamma = (R_est*alpha - beta^2)/(beta*G);
+%     mu = mu_F(t);
     
     % Reshape the arrays.
     dro_pos_A = reshape(dro_pos_prev_V,2,12)';
@@ -191,7 +197,7 @@ for t = 2:T
     for i = 1:11
         for j = (i+1):12
             r_factor_A(i,j) = ...
-            1*norm([r_diff_A(i,2*j-1),r_diff_A(i,2*j)]);
+            1*norm([r_diff_A(i,2*j-1),r_diff_A(i,2*j)]/dt);
         end
     end
     r_factor_A = r_factor_A + r_factor_A';
@@ -203,7 +209,7 @@ for t = 2:T
     y_unit_A = target_finder(dro_pos_A,tar_pos_V);
     y_diff_A = y_prev_A - y_unit_A;
     for i = 1:12
-        y_factor_V(i) = 1*norm(y_diff_A(i,:));
+        y_factor_V(i) = 1*norm(y_diff_A(i,:)/dt);
     end
     y_repulsion_A = y_unit_A.*y_factor_V;
     y_repulsion_V = reshape(y_repulsion_A',1,24);
@@ -221,40 +227,6 @@ for t = 2:T
     gamma_A = r_factor_A.*r_unit_A;
     % This vector is to counteract any closeness between drones.
     gamma_V = sum(gamma_A);
-    
-    % This form is to counteract any shared trajectories between drones.
-    % First find the approximated y unit vectors for all drones, by
-    % assuming that they are perpendicular to the motion of travel.
-    dash_y_A = ([0, 1; -1, 0]*v_unit_A')';
-    
-    % Now find the inner products of all of these vectors.
-    dash_inner_A = zeros(12);
-    for i = 1:11
-        for j = (i+1):12
-            dash_inner_A(i,j) = dot(dash_y_A(i,:),dash_y_A(j,:));
-        end
-    end
-    dash_inner_A = dash_inner_A + dash_inner_A';
-    
-    % Choose the value of the worst performing pair, i.e., the inner
-    % product which is closest to 1. Note that <y(i),y(j)> = -1 is NOT a
-    % problem, as they are facing in opposite directions. We actually want
-    % to use (1 - X) where X is the worst value. NOTE: This may not work,
-    % so instead we can penalise in terms of each drone's personal worst.
-%     dash_factor_S = min(min(1 - dash_inner_A));
-    dash_factor_V = min(1 - dash_inner_A);
-    dash_factor_V = reshape(repmat(dash_factor_V,2,1),24,1)';
-    dash_acos_A = acos(dash_inner_A);
-    dash_mod_A = mod(dash_acos_A, 2*pi/12);
-    % Only divide by N-1 neighbours.
-    dash_sum_V = sum(dash_mod_A,1)/11; 
-    dash_sum_V = reshape(repmat(dash_sum_V,2,1),24,1)';
-    % Divide by the penalizing factor, which will make everything increase.
-%     dash_sum_V = dash_sum_V/dash_factor_S;
-    dash_sum_V = dash_sum_V./((dash_factor_V).^2);
-%     dash_sum_V = dash_sum_V./(dash_factor_V).^zeta;
-    % Find the order of magnitude by which we can affect the 'bad' vectors.
-    dash_magnitude_V = floor(floor(log10(dash_sum_V))/6);
     
     % Update the drone trajectories.
     dro_traj_A(t,:) = dro_pos_prev_V + dro_vel_prev_V*dt;
@@ -286,30 +258,8 @@ for t = 2:T
         beta*reshape(v_unit_A',1,24) - ...
         dro_vel_prev_V - ...
         gamma*gamma_V - ...
-        eta*y_repulsion_V + ...
-        randn(1,24).*dash_magnitude_V*min(50,t/10)...
-        )*dt;
+        mu*y_repulsion_V)*dt;
     dro_vel_prev_V = dro_direc_A(t,:);
-    
-    
-%     tracking_twelve_no_collapse(200,5001,10,10,10,100) - with the below
-%     code it is clear that the difference between the arrays is very
-%     small, but I think this means that the SECOND derivatives go to zero,
-%     rather than the derivatives themselves.
-%     if mod(t,500) == 0
-%         gamma_V_holder = gamma_V;
-%         y_repulsion_V_holder = y_repulsion_V;
-%         dash_magnitude_V_holder = dash_magnitude_V;
-%     end
-%     if mod(t,500) == 1
-%         gamma_norm = norm(gamma_V - gamma_V_holder)
-%         norm(gamma_V) - norm(gamma_V_holder)
-%         y_rep_norm = norm(y_repulsion_V - y_repulsion_V_holder)
-%         norm(y_repulsion_V) - norm(y_repulsion_V_holder)
-%         dash_y_norm = norm(dash_magnitude_V - dash_magnitude_V_holder)
-%         norm(dash_magnitude_V) - norm(dash_magnitude_V_holder)
-%         pause
-%     end
     
     % Update the drone positions.
     addpoints(g1a,tar_trajectory_A(t,1),tar_trajectory_A(t,2));

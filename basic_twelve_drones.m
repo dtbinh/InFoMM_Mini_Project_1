@@ -6,22 +6,19 @@ function [] = basic_twelve_drones(L,T,a,b)
 %
 % DESCRIPTION:
 %     This is the initial (simple) version of the tracking problem, using
-%     four individual drones and a single object to be tracked. In this
+%     twelve individual drones and a single object to be tracked. In this
 %     formulation, we will impose all parameters, as well as the movement
-%     of the tracked object. These may become inputs in later iterations of
-%     this code.
+%     of the tracked object.
 % INPUT: 
 %     L: {float} Length of the simulation (seconds).
-%     T: {int} Number of data points wanted in the simulation.
+%     T:   {int} Number of data points wanted in the simulation.
 %     a: {float} 'alpha' in the original system equations.
 %     b: {float} 'beta' in the original system equations.
 % OUTPUT:
 %      : {}
 
 %% Example
-% [] = basic_twelve_drones(100,5001,1.5,0.5)
-% [] = basic_twelve_drones(100,5001,10,10)
-% [] = basic_twelve_drones(800,20001,10,10)
+% basic_twelve_drones(100,5001,10,10)
 
 %%
 keepvars = {'L','T','a','b'};
@@ -33,24 +30,24 @@ clearvars('-except', keepvars{:}); close all; clc; format compact;
 % governed by the vector function [f(t), g(t)].
 
 % Functional initialisation of the target's movement.
-% Y1 = @(t) 5*sin(t/15);
-% Y2 = @(t) 5*cos(t/15);
 Y1 = @(t) 0*sin(t/15);
 Y2 = @(t) 0*cos(t/15);
 tar_pos_V = [Y1(0),Y2(0)];
 
 % Random pos. initialisation AROUND the target
-dro_pos_A = repmat(tar_pos_V,12,1) + randn(12,2);
+dro_pos_A = repmat(tar_pos_V,12,1) + 2*randn(12,2);
 
 % Stationary initialisation.
-dro_vel_A = zeros(12,2);  
+% dro_vel_A = zeros(12,2);  
 
 % Random vel. initialisation.
-% dro_vel_A = randn(4,2);   
+% dro_vel_A = randn(12,2);   
 
 % Circular orbit initialisation.
-% y_unit_A = target_finder(dro_pos_A,tar_pos_V);
-% dro_vel_A = ([0, -1; 1 0]*y_unit_A')';
+y_unit_A = target_finder(dro_pos_A,tar_pos_V);
+dro_vel_A = 5*([0, -1; 1 0]*y_unit_A')';
+% Send one the wrong way.
+% dro_vel_A(12,:) = -dro_vel_A(12,:);
 
 % Compute all unit vectors {r,v,y} defined in the original formulation.
 r_unit_A = direction_finder(dro_pos_A);
@@ -127,22 +124,34 @@ h8 = animatedline('Color','m','MaximumNumPoints',20,'LineStyle','-.');
 h9 = animatedline('Color','k','MaximumNumPoints',20,'LineStyle','-.');
 h10 = animatedline('Color','b','MaximumNumPoints',20,'LineStyle','--');
 h11 = animatedline('Color','r','MaximumNumPoints',20,'LineStyle','--');
-h12 = animatedline('Color','m','MaximumNumPoints',20,'LineStyle','--');
-h13 = animatedline('Color','k','MaximumNumPoints',20,'LineStyle','--');
-axis([-1 1 -1 1]);
+h12 = animatedline('Color','m','MaximumNumPoints',20,'LineStyle','-');
+h13 = animatedline('Color','k','MaximumNumPoints',20,'LineStyle','-');
+axis([-20 20 -20 20]);
 legend('Target','Centroid','Drone 1','Drone 2','Drone 3','Drone 4',...
     'Drone 5','Drone 6','Drone 7','Drone 8','Drone 9','Drone 10',...
     'Drone 11','Drone 12');
 shg;
 
 v_sum_V = zeros(T,2);
+ang_mom_V = zeros(T,2);
+vel_mag_V = zeros(T,12);
 
 for t = 2:T
+    
+    if mod(t,200) == 0
+        % Time counter, to ensure the code is running.
+        t_count = t
+    end
     
     % Reshape the arrays.
     dro_pos_A = reshape(dro_pos_prev_V,2,12)';
     dro_vel_A = reshape(dro_vel_prev_V,2,12)';
     tar_pos_V = [Y1(all_time_V(t)),Y2(all_time_V(t))];
+    
+    % Compute the velocity magnitudes, to plot convergence.
+    for i = 1:12
+        vel_mag_V(t,i) = norm(dro_vel_A(i,:));
+    end
 
     % Recompute all unit vectors.
     r_unit_A = direction_finder(dro_pos_A);
@@ -150,6 +159,11 @@ for t = 2:T
     y_unit_A = target_finder(dro_pos_A,tar_pos_V);
     v_repulsion_V = sum(v_unit_A,1);
     v_sum_V(t,:) = v_repulsion_V;
+    
+    % Compute the angular momentum, to see if it is conserved at all times,
+    % or only in the final solution.
+    L = angular_momentum(dro_vel_A,dro_pos_A,y_unit_A,12);
+    ang_mom_V(t) = L;
     
     % Update the drone trajectories.
     dro_traj_A(t,:) = dro_pos_prev_V + dro_vel_prev_V*dt;
@@ -209,5 +223,26 @@ for t = 2:T
     drawnow;
     
 end
+
+% Plot the behaviour of the angular momentum of the system.
+figure();
+plot(ang_mom_V);
+shg;
+
+figure();
+hold on;
+plot(vel_mag_V(:,1));
+plot(vel_mag_V(:,2));
+plot(vel_mag_V(:,3));
+plot(vel_mag_V(:,4));
+plot(vel_mag_V(:,5));
+plot(vel_mag_V(:,6));
+plot(vel_mag_V(:,7));
+plot(vel_mag_V(:,8));
+plot(vel_mag_V(:,9));
+plot(vel_mag_V(:,10));
+plot(vel_mag_V(:,11));
+plot(vel_mag_V(:,12));
+shg;
 
 end

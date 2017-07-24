@@ -23,7 +23,6 @@ function [] = tracking_four_angle_inference(L,T,a,b,g,e)
 %     : {}
 
 %% Example
-% tracking_four_angle_inference(100,5001,1.5,0.5,10,1) {NOT GOOD}
 % tracking_four_angle_inference(100,5001,10,10,10,100) w/ slow circ
 % tracking_four_angle_inference(100,5001,5,5,50,100) w/ stationary
 
